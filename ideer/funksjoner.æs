@@ -1,0 +1,12 @@
+
+funk er_partall (Htall)->Bool:
+    hvis dup 2 % 0 ==:
+        sann
+    ellers:
+        usann
+
+
+hvis 2 er_partall:
+    "partall" skrivnl
+ellers:
+    "oddetal" skrivnl

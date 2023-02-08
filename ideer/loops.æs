@@ -1,0 +1,8 @@
+
+0
+når dup 10 <:
+    dup skrivnl
+    1 +
+
+for hver x i 0..10:
+    x skrivnl

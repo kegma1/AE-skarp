@@ -1,0 +1,6 @@
+1
+
+hvis dup 2 % 0 ==:
+    "partall" skrivnl
+ellers:
+    "oddetal" skrivnl

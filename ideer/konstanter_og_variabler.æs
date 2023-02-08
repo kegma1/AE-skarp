@@ -1,0 +1,14 @@
+konst x: Htall = 10
+konst y: Streng =
+    'k' 'u' +
+
+var foo: Htall = 10
+
+minne bar[50]: Streng
+
+
+foo = 
+    x foo +
+
+bar[foo] = y
+
