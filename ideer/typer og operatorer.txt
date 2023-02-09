@@ -28,20 +28,39 @@ slipp ( a -- )
 snu ( a b -- b a )
 over ( a b -- a b a )
 rot ( a b c -- b c a )
-== 
-!= 
-< 
-> 
-<= 
->= 
+== (alle)
+!= (alle)
+< (Htall, Ftall)
+> (Htall, Ftall)
+<= (Htall, Ftall)
+>= (Htall, Ftall)
+.. = eksklisiv tallrekke
+..= = inklusiv tallrekke
+:: = deksontruksjon av iteratorer, se eksempel under V. type blir automatisk definert
+```
+    konst foo: [Htall; 5] = [1, 2, 3, 4, 5]
+    var x::xs = foo
 
+    x skrivnl # skriver 1
+    xs skrivnl # skriver [2, 3, 4, 5]
+```
 
 nøkkel ord:
+funk = funksjons definisjon
+var = for å lage variabler
+konst = for å lage konstanter
+la = lar deg navngi en rekke verdier, disse konstantene varer ut blokken
+hvis
+ellers
+ellvis
+når = som en while loop
+for = som en for loop
+hver = brukes i for løkker for å deklarere løkke konstanten
+i = sjekker om noe er i en noe annet, brukes også i for løkker for å skilde løkke konstanten og iteratoren
+er = sjekker type
 
-innebygde ord
-i = 
-er = 
-skriv =
-skrivnl =
-spørr =
-gjør_til() =
+innebygde funksjoner:
+skriv = tar en skrivbar verdi og skriver den til terminalen
+skrivnl = tar en skrivbar verdi og skriver den til terminalen med en ny linje
+spørr = tar en skrivbar verdi, skriver den til terminalen og lar brukeren skrive i terminalen, og putter svaret på stabelen 
+gjør_til() = konverterer verdier til andre typer, putter verdien i en kanskje
