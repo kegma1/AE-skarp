@@ -1,0 +1,13 @@
+funk foo la x: Htall, y: Htall -> Htall: # kommer mest sannsynelig ikke i v2.0
+    x y +
+
+
+1 2
+la x: Htall, y: Htall:
+    x y +
+    x *
+
+skrivnl
+
+
+1 2 foo skrivnl

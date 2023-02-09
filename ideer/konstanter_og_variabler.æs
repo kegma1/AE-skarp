@@ -4,7 +4,7 @@ konst y: Streng =
 
 var foo: Htall = 10
 
-var bar: [Streng; 50]
+var bar: [Streng; 50] # ["", "", "", ...]
 
 
 foo = 

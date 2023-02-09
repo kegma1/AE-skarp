@@ -1,5 +1,5 @@
 
-funk er_partall (Htall)->Bool:
+funk er_partall Htall -> Bool:
     hvis dup 2 % 0 ==:
         sann
     ellers:

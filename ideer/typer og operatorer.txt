@@ -1,0 +1,47 @@
+typer:
+Htall = signed int
+Ftall = float
+Bool
+Tegn 
+Streng 
+[type; len] | Liste<T>
+Byte = u8
+kanskje = samme som rust 'option', enten noe(T) eller ingenting
+
+operatorer:
++ (Htall, Ftall)
+- (Htall, Ftall)
+* (Htall, Ftall)
+/ (Htall, Ftall)
+% (Htall, Ftall)
+++ = konkatiner (Streng, Tegn)
+[<Htall>] = indeksering (Streng, Liste<T>)
+| = bitvis eller (Byte)
+& = bitvis og (Byte)
+^ = bitvis eksklisiv eller (Byte)
+! = bitvis ikke (Byte)
+ikke = logisk ikker (Bool)
+eller = logisk eller (Bool)
+og = logisk og (Bool)
+dup ( a -- a a )
+slipp ( a -- )
+snu ( a b -- b a )
+over ( a b -- a b a )
+rot ( a b c -- b c a )
+== 
+!= 
+< 
+> 
+<= 
+>= 
+
+
+nøkkel ord:
+
+innebygde ord
+i = 
+er = 
+skriv =
+skrivnl =
+spørr =
+gjør_til() =
