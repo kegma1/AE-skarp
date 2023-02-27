@@ -1,9 +1,9 @@
 typer:
-Htall = signed int
-Ftall = float
-Bool
+✅Htall = signed int
+✅Ftall = float
+✅Bool
 Tegn 
-Streng 
+✅Streng 
 [type; len] | Liste<T>
 Byte = u8
 kanskje = samme som rust 'option', enten noe(T) eller ingenting

@@ -4,64 +4,127 @@ pub enum Lexem {
     Operator(String),
     Literal(String),
     Keyword(String),
-    _Separator(String),
+    Separator(String),
     Indent,
+    Dedent,
 }
 
 const KEYWORDS: [&str; 3] = ["funk", "konst", "var"];
 
 const OPERATOR: [&str; 5] = ["+", "-", "*", "/", "%"];
 
-const _SEPERATORS: [char; 3] = [':', '(', ')'];
+const SEPERATORS: [&str; 3] = [":", "(", ")"];
 
 pub fn lex(src: &String) -> Result<Vec<Lexem>, &'static str> {
-    let mut current_word = "".to_string();
     let mut lexed_src: Vec<Lexem> = vec![];
-    let mut i = 0;
-    while i < src.len() {
-        let c = src.chars().nth(i).unwrap();
-        match c {
-            '"' => {
-                let (str, offset) = scan_string(&src[i + 1..src.len()]).unwrap();
-                lexed_src.push(Lexem::Literal(str));
-                i += offset
+    let mut current_indentation = 0;
+
+    let mut lines = src.lines().peekable();
+
+    while let Some(line) = lines.next() {
+        let mut line_indentation = 0;
+
+        for c in line.chars() {
+            match c {
+                ' ' => line_indentation += 1,
+                '\t' => line_indentation += 4,
+                _ => break,
             }
-            _ if c.is_whitespace() => {
-                println!("'{}'", current_word);
-                if current_word == "    " || current_word == "\t" {
-                    lexed_src.push(Lexem::Indent);
-                } else if KEYWORDS.contains(&current_word.as_ref()) {
-                    lexed_src.push(Lexem::Keyword(current_word));
-                } else if OPERATOR.contains(&current_word.as_ref()) {
-                    lexed_src.push(Lexem::Operator(current_word));
-                } else {
-                    if current_word != "" {
-                        lexed_src.push(Lexem::Identifier(current_word));
-                    }
-                }
-                current_word = "".to_string();
-            }
-            _ => current_word.push(c),
         }
 
-        i += 1
+        if line_indentation > current_indentation {
+            lexed_src.push(Lexem::Indent);
+            current_indentation = line_indentation;
+        } else if line_indentation < current_indentation {
+            while line_indentation < current_indentation {
+                lexed_src.push(Lexem::Dedent);
+                current_indentation -= 4;
+            }
+        }
+
+        lexed_src.append(&mut lex_line(line))
+    }
+
+    while current_indentation > 0 {
+        lexed_src.push(Lexem::Dedent);
+        current_indentation -= 4;
     }
 
     Ok(lexed_src)
 }
 
-fn scan_string(str: &str) -> Option<(String, usize)> {
-    let mut scanned_str = "".to_string();
-    let mut i_offset = 0;
+fn lex_line(line: &str) -> Vec<Lexem> {
+    let mut tokens = vec![];
+    let mut current_token = String::new();
 
-    for c in str.chars() {
-        if c != '"' {
-            scanned_str.push(c);
-            i_offset += 1;
+    //modes
+    let mut in_string = false;
+
+    for c in line.chars() {
+        if c.is_whitespace() {
+            if in_string {
+                current_token.push(c);
+            } else if !current_token.is_empty() {
+                tokens.push(get_token(&current_token));
+                current_token.clear()
+            }
+        } else if c == '"' {
+            if in_string {
+                tokens.push(Lexem::Literal(current_token.to_string()));
+                current_token.clear();
+            } else {
+                if !current_token.is_empty() {
+                    tokens.push(get_token(&current_token));
+                    current_token.clear();
+                }
+            }
+            in_string = !in_string;
         } else {
-            break;
+            current_token.push(c);
         }
     }
 
-    Some((scanned_str.clone(), i_offset + 1))
+    if !current_token.is_empty() {
+        tokens.push(get_token(&current_token));
+    }
+
+    tokens
+}
+
+fn get_token(word: &String) -> Lexem {
+    if KEYWORDS.contains(&word.as_str()) {
+        Lexem::Keyword(word.to_string())
+    } else if OPERATOR.contains(&word.as_str()) {
+        Lexem::Operator(word.to_string())
+    } else if SEPERATORS.contains(&word.as_str()) {
+        Lexem::Separator(word.to_string())
+    } else if word == "sann" {
+        Lexem::Literal("sann".to_string())
+    } else if word == "usann" {
+        Lexem::Literal("usann".to_string())
+    } else if word.parse::<i64>().is_ok() {
+        Lexem::Literal(word.to_string())
+    } else if match is_float(&word) {
+        Some(x) => x,
+        None => false,
+    } {
+        Lexem::Literal(word.to_string())
+    } else {
+        Lexem::Identifier(word.to_string())
+    }
+}
+
+fn is_float(s: &str) -> Option<bool> {
+    if s == "iet" {
+        return Some(true);
+    } else if s == "uendelig" || s == "-uendelig" {
+        Some(true)
+    } else if let Ok(_) = s.parse::<f64>() {
+        println!("skriv på norsk for svarte helvete");
+        None
+    } else if let Ok(num) = s.replace(",", ".").parse::<f64>() {
+        Some(num.is_finite())
+    } else {
+        Some(false)
+    }
 }
