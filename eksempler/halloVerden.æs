@@ -1,5 +1,7 @@
-dsad "Hallo, verden" skrivnl
+dsad "Hallo, verden" skrivnl:
     funk var * +
+
+[1; 2; 3; 4]
 
 sann
 usann
@@ -16,3 +18,5 @@ uendelig
 -uendelig
 0.0
 NaN
+
+"123"

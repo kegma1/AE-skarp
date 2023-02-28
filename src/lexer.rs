@@ -3,6 +3,7 @@ pub enum Lexem {
     Identifier(String),
     Operator(String),
     Literal(String),
+    String(String),
     Keyword(String),
     Separator(String),
     Indent,
@@ -13,7 +14,7 @@ const KEYWORDS: [&str; 3] = ["funk", "konst", "var"];
 
 const OPERATOR: [&str; 5] = ["+", "-", "*", "/", "%"];
 
-const SEPERATORS: [&str; 3] = [":", "(", ")"];
+const SEPERATORS: [&str; 4] = [":", ";", "[", "]"];
 
 pub fn lex(src: &String) -> Result<Vec<Lexem>, &'static str> {
     let mut lexed_src: Vec<Lexem> = vec![];
@@ -68,9 +69,20 @@ fn lex_line(line: &str) -> Vec<Lexem> {
                 tokens.push(get_token(&current_token));
                 current_token.clear()
             }
+        } else if SEPERATORS.contains(&c.to_string().as_str()){
+            if in_string {
+                current_token.push(c);
+            } else if !current_token.is_empty() {
+                tokens.push(get_token(&current_token));
+                tokens.push(Lexem::Separator(c.to_string()));
+                current_token.clear()
+            } else {
+                tokens.push(Lexem::Separator(c.to_string()));
+                current_token.clear()
+            }
         } else if c == '"' {
             if in_string {
-                tokens.push(Lexem::Literal(current_token.to_string()));
+                tokens.push(Lexem::String(current_token.to_string()));
                 current_token.clear();
             } else {
                 if !current_token.is_empty() {
