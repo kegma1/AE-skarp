@@ -1,4 +1,4 @@
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Type {
     String,
     Int,
@@ -8,6 +8,8 @@ pub enum Type {
 
 pub const KEYWORDS: [&str; 3] = ["hvis", "ellvis", "ellers"];
 
-pub const OPERATOR: [&str; 11] = ["+", "-", "*", "/", "%", "==", "!=", "<", ">", "<=", ">="];
+pub const OPERATOR: [&str; 12] = [
+    "+", "-", "*", "/", "%", "==", "!=", "<", ">", "<=", ">=", "=",
+];
 
-pub const SEPERATORS: [&str; 5] = [":", ";", "[", "]", "="];
+pub const SEPERATORS: [&str; 4] = [":", ";", "[", "]"];

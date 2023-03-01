@@ -1,4 +1,4 @@
-hvis 4 2 2 * ==:
-    420 skrivln
+hvis 4 2 ==: 
+    420 skrivnl
 ellers:
-    69 skrivln
+    69 skrivnl

@@ -1,7 +1,7 @@
 use crate::common::Type;
 use crate::lexer::Lexem;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Op {
     PushInt(i64),
 
@@ -14,11 +14,27 @@ pub enum Op {
     EqInt,
 
     Println,
+
+    JumpIfFalse(Option<usize>),
+    Jump(Option<usize>),
+
+    StartBlock,
+    EndBlock,
+}
+
+#[derive(Debug)]
+enum Keyword {
+    If,
+    Else,
 }
 
 pub fn parse(src: Vec<Lexem>) -> Result<Vec<Op>, &'static str> {
     let mut ast: Vec<Op> = vec![];
+
     let mut type_stack: Vec<Type> = vec![];
+    let mut jump_stack: Vec<usize> = vec![];
+    let mut keyword_stack: Vec<Keyword> = vec![];
+
     let mut src_iter = src.iter();
     while let Some(lexem) = src_iter.next() {
         match lexem {
@@ -111,13 +127,39 @@ pub fn parse(src: Vec<Lexem>) -> Result<Vec<Op>, &'static str> {
                 }
                 _ => return Err("ERROR: Unsupported type"),
             },
-            Lexem::Keyword(_) => todo!(),
-            Lexem::Separator(_) => todo!(),
-            Lexem::Indent => todo!(),
-            Lexem::Dedent => todo!(),
+            Lexem::Keyword(word) => match word.as_str() {
+                "hvis" => keyword_stack.push(Keyword::If),
+                "ellers" => keyword_stack.push(Keyword::Else),
+                _ => return Err("ERROR: Unsupported keyword"),
+            },
+            Lexem::Separator(sep) => match sep.as_str() {
+                ":" => {
+                    let kw = keyword_stack.pop().unwrap();
+                    match kw {
+                        Keyword::If => {
+                            let type_condition = type_stack.pop().unwrap();
+
+                            if type_condition == Type::Bool {
+                                ast.push(Op::JumpIfFalse(None));
+
+                                jump_stack.push(ast.len() - 1);
+                            }
+                        }
+                        Keyword::Else => {
+                            let possible_if = jump_stack.pop().unwrap();
+                            if ast[possible_if] == Op::JumpIfFalse(None) {
+                                ast[possible_if] = Op::JumpIfFalse(Some(ast.len() - 1))
+                            }
+                        },
+                    }
+                }
+
+                _ => return Err("ERROR: Unsupported seperator"),
+            },
+            Lexem::Indent => ast.push(Op::StartBlock),
+            Lexem::Dedent => ast.push(Op::EndBlock),
         }
     }
 
     Ok(ast)
 }
-
