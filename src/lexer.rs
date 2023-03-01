@@ -1,20 +1,15 @@
+use crate::common::{Type, KEYWORDS, OPERATOR, SEPERATORS};
+
 #[derive(Debug)]
 pub enum Lexem {
     Identifier(String),
     Operator(String),
-    Literal(String),
-    String(String),
+    Literal((String, Type)),
     Keyword(String),
     Separator(String),
     Indent,
     Dedent,
 }
-
-const KEYWORDS: [&str; 3] = ["funk", "konst", "var"];
-
-const OPERATOR: [&str; 5] = ["+", "-", "*", "/", "%"];
-
-const SEPERATORS: [&str; 4] = [":", ";", "[", "]"];
 
 pub fn lex(src: &String) -> Result<Vec<Lexem>, &'static str> {
     let mut lexed_src: Vec<Lexem> = vec![];
@@ -82,7 +77,7 @@ fn lex_line(line: &str) -> Vec<Lexem> {
             }
         } else if c == '"' {
             if in_string {
-                tokens.push(Lexem::String(current_token.to_string()));
+                tokens.push(Lexem::Literal((current_token.to_string(), Type::String)));
                 current_token.clear();
             } else {
                 if !current_token.is_empty() {
@@ -111,16 +106,16 @@ fn get_token(word: &String) -> Lexem {
     } else if SEPERATORS.contains(&word.as_str()) {
         Lexem::Separator(word.to_string())
     } else if word == "sann" {
-        Lexem::Literal("sann".to_string())
+        Lexem::Literal(("sann".to_string(), Type::Bool))
     } else if word == "usann" {
-        Lexem::Literal("usann".to_string())
+        Lexem::Literal(("usann".to_string(), Type::Bool))
     } else if word.parse::<i64>().is_ok() {
-        Lexem::Literal(word.to_string())
+        Lexem::Literal((word.to_string(), Type::Int))
     } else if match is_float(&word) {
         Some(x) => x,
         None => false,
     } {
-        Lexem::Literal(word.to_string())
+        Lexem::Literal((word.to_string(), Type::Float))
     } else {
         Lexem::Identifier(word.to_string())
     }
