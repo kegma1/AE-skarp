@@ -64,7 +64,7 @@ fn lex_line(line: &str) -> Vec<Lexem> {
                 tokens.push(get_token(&current_token));
                 current_token.clear()
             }
-        } else if SEPERATORS.contains(&c.to_string().as_str()){
+        } else if SEPERATORS.contains(&c.to_string().as_str()) {
             if in_string {
                 current_token.push(c);
             } else if !current_token.is_empty() {

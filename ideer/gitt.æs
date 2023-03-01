@@ -3,7 +3,7 @@ funk foo x: Htall, y: Htall -> Htall: # kommer mest sannsynelig ikke i v2.0
 # når du definerer en funksjon(livsoppgave 😉) kan du ENTEN ha navngitte argumenter som vist over ELLER bare type, IKKE begge.
 
 1 2
-la x: Htall, y: Htall:
+gitt x: Htall, y: Htall:
     x y +
     x *
 

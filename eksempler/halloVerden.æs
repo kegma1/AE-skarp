@@ -1,1 +1,4 @@
-34 35 + skrivnl
+hvis 4 2 2 * ==:
+    420 skrivln
+ellers:
+    69 skrivln

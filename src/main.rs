@@ -1,6 +1,6 @@
+mod common;
 mod lexer;
 mod parser;
-mod common;
 
 use lexer::lex;
 use parser::parse;
@@ -13,7 +13,10 @@ fn main() {
 
     if let Some(p) = path {
         let source_code = fs::read_to_string(p).expect(&format!("Kunne ikke lese fil '{}'", p));
-        println!("{:?}", parse(lex(&String::from(source_code + " ")).unwrap()).unwrap())
+        let lexed = lex(&String::from(source_code + " ")).unwrap();
+
+        // println!("{:?}", lexed)
+        println!("{:?}", parse(lexed).unwrap())
     } else {
         println!("no argument given")
     }

@@ -49,7 +49,7 @@ nøkkel ord:
 funk = funksjons definisjon
 var = for å lage variabler
 konst = for å lage konstanter
-la = lar deg navngi en rekke verdier, disse konstantene varer ut blokken
+gitt = lar deg navngi en rekke verdier, disse konstantene varer ut blokken
 hvis
 ellers
 ellvis
