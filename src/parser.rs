@@ -152,7 +152,7 @@ pub fn parse(src: Vec<Lexem>) -> Result<Vec<Op>, &'static str> {
                                 jump_stack.push(ast.len() - 1);
                                 ast[possible_if] = Op::JumpIfFalse(Some(ast.len() - 1))
                             }
-                        },
+                        }
                     }
                 }
 
@@ -166,11 +166,10 @@ pub fn parse(src: Vec<Lexem>) -> Result<Vec<Op>, &'static str> {
                         let _ = jump_stack.pop();
                     } else if ast[*possible_jump] == Op::JumpIfFalse(None) {
                         ast[*possible_jump] = Op::JumpIfFalse(Some(ast.len()));
-                        
                     }
                     ast.push(Op::EndBlock)
                 }
-            },
+            }
         }
     }
 
