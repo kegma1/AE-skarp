@@ -147,7 +147,9 @@ pub fn parse(src: Vec<Lexem>) -> Result<Vec<Op>, &'static str> {
                         }
                         Keyword::Else => {
                             let possible_if = jump_stack.pop().unwrap();
-                            if ast[possible_if] == Op::JumpIfFalse(None) {
+                            if let Op::JumpIfFalse(_) = ast[possible_if] {
+                                ast.push(Op::Jump(None));
+                                jump_stack.push(ast.len() - 1);
                                 ast[possible_if] = Op::JumpIfFalse(Some(ast.len() - 1))
                             }
                         },
@@ -157,7 +159,18 @@ pub fn parse(src: Vec<Lexem>) -> Result<Vec<Op>, &'static str> {
                 _ => return Err("ERROR: Unsupported seperator"),
             },
             Lexem::Indent => ast.push(Op::StartBlock),
-            Lexem::Dedent => ast.push(Op::EndBlock),
+            Lexem::Dedent => {
+                if let Some(possible_jump) = jump_stack.last() {
+                    if ast[*possible_jump] == Op::Jump(None) {
+                        ast[*possible_jump] = Op::Jump(Some(ast.len()));
+                        let _ = jump_stack.pop();
+                    } else if ast[*possible_jump] == Op::JumpIfFalse(None) {
+                        ast[*possible_jump] = Op::JumpIfFalse(Some(ast.len()));
+                        
+                    }
+                    ast.push(Op::EndBlock)
+                }
+            },
         }
     }
 
