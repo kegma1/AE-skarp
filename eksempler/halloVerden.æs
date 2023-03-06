@@ -1,4 +1,6 @@
-hvis 4 2 ==: 
+hvis 2 2 ==: 
     420 skrivnl
 ellers:
     69 skrivnl
+
+10 10 + 2 - 5 * skrivnl
