@@ -17,6 +17,7 @@ fn main() {
         let source_code = fs::read_to_string(p).expect(&format!("Kunne ikke lese fil '{}'", p));
         let lexed = lex(&String::from(source_code + " ")).unwrap();
         let parsed = parse(lexed).unwrap();
+        // println!("{:?}", parsed)
         let _ = interpret(parsed);
     } else {
         println!("no argument given")

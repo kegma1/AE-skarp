@@ -6,10 +6,10 @@ pub enum Type {
     Bool,
 }
 
-pub const KEYWORDS: [&str; 3] = ["hvis", "ellvis", "ellers"];
+pub const KEYWORDS: [&str; 3] = ["hvis", "ellers", "når"];
 
-pub const OPERATOR: [&str; 12] = [
-    "+", "-", "*", "/", "%", "==", "!=", "<", ">", "<=", ">=", "=",
+pub const OPERATOR: [&str; 13] = [
+    "+", "-", "*", "/", "%", "==", "!=", "<", ">", "<=", ">=", "=", "dup",
 ];
 
 pub const SEPERATORS: [&str; 4] = [":", ";", "[", "]"];

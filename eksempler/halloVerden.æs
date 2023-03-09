@@ -1,6 +1,7 @@
-hvis 2 2 ==: 
-    420 skrivnl
-ellers:
-    69 skrivnl
-
-10 10 + 2 - 5 * skrivnl
+0
+når dup 16 <:
+    hvis dup 2 % 0 ==:
+        sann skrivnl
+    ellers:
+        usann skrivnl
+    1 +
