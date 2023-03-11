@@ -1,6 +1,6 @@
 use crate::common::{Type, KEYWORDS, OPERATOR, SEPERATORS};
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Lexem {
     Identifier(String),
     Operator(String),
