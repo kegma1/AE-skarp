@@ -1,6 +1,7 @@
 mod parser;
 
 use anyhow::Result;
+use parser::Parser;
 use std::env;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -11,11 +12,10 @@ fn main() -> Result<()> {
 
     if let Some(p) = path {
         let source_code = BufReader::new(File::open(p)?).lines();
-
+        let ast = Parser::parse(source_code)?;
+        println!("{:?}", ast)
     } else {
         println!("no argument given")
     }
     Ok(())
 }
-
-
