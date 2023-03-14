@@ -176,19 +176,20 @@ pub fn parse(src: Vec<Lexem>, opt_type_stack: Option<&Vec<Type>>) -> Result<(Vec
                         return Err("invalid syntax, expected an indent");
                     }
                     let (condition_ast, mut condition_stack) = parse(condition, Some(&type_stack)).unwrap();
-                    let (block_ast, block_stack) = parse(block, Some(&type_stack)).unwrap();
 
+                    
                     if let Some(Type::Bool) = condition_stack.pop() {
-                        ast.push(Node::If { 
-                            condition: condition_ast, 
-                            block: block_ast 
-                        });
-
-                        type_stack =  block_stack
+                        type_stack = condition_stack
                     } else {
                         return Err("condition dose not result in a bool");
                     }
+                    let (block_ast, block_stack) = parse(block, Some(&type_stack)).unwrap();
+                    ast.push(Node::If { 
+                        condition: condition_ast, 
+                        block: block_ast 
+                    });
 
+                    type_stack =  block_stack
 
                 },
                 _ => return Err("ERROR: Unsupported keyword"),
