@@ -1,10 +1,11 @@
-use anyhow::Result;
+use anyhow::{Result, anyhow};
 use std::{io::Lines, iter::Peekable, str::Chars};
 use std::io::{BufReader, Read};
 
 #[derive(Debug)]
 pub enum Op {
     SumInt,
+    SubInt,
 }
 
 #[derive(Debug)]
@@ -31,13 +32,17 @@ impl<R: Read> Parser<R> {
     }
 
     fn parse_line(&mut self, line: &mut Peekable<Chars>) -> Result<()> {
+        let mut word = String::from("");
         loop {
             match line.peek() {
                 Some('0'..='9') => self.parse_number(line)?,
-                Some(_) => {
-                    let _ = line.next().unwrap();
-                }
-                None => break,
+                Some(c) if c.is_whitespace() => {
+                    self.parse_word(&word)?;
+                    word = String::from("");
+                    line.next();
+                },
+                Some(_) => word.push(line.next().unwrap()),
+                None => {self.parse_word(&word)?; break;},
             }
         }
         Ok(())
@@ -56,11 +61,36 @@ impl<R: Read> Parser<R> {
         Ok(())
     }
 
-    fn parse_operator(&mut self, line: &mut Peekable<Chars>) -> Result<()> {
-        Ok(())
+    fn parse_word(&mut self, word: &String) -> Result<()> {
+        if word.is_empty() {
+            return Ok(());
+        }
+
+        if let Ok(_) = self.parse_operator(word) {
+            Ok(())
+        } else {
+            self.parse_identifier(word)?;
+            Ok(())
+        }
+
     }
 
-    fn parse_identifier(&mut self, line: &mut Peekable<Chars>) -> Result<()> {
+    fn parse_operator(&mut self, word: &String) -> Result<()> {
+        match word.as_str() {
+            "+" => {
+                self.ast.push(Node::Operator(Op::SumInt));
+                Ok(())
+            },
+            "-" => {
+                self.ast.push(Node::Operator(Op::SubInt));
+                Ok(())
+            },
+            _ => Err(anyhow!("Unknown operator: {}", word)),
+        }
+    }
+
+    fn parse_identifier(&mut self, word: &String) -> Result<()> {
+        self.ast.push(Node::Identifier(word.clone()));
         Ok(())
     }
 }
