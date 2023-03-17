@@ -13,7 +13,9 @@ fn main() -> Result<()> {
     if let Some(p) = path {
         let source_code = BufReader::new(File::open(p)?).lines();
         let ast = Parser::parse(source_code)?;
-        println!("{:?}", ast)
+        for node in ast {
+            println!("{:?}", node)
+        }
     } else {
         println!("no argument given")
     }
