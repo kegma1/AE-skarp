@@ -68,16 +68,18 @@ impl Parser<'_> {
         }
 
         if let Ok(_) = self.parse_operator(&word) {
-            Ok(())
-        } else if let Ok(_) = self.parse_keyword(&word) {
-            Ok(())
-        } else {
-            self.parse_identifier(&word)?;
-            Ok(())
+            return Ok(())
+        } 
+
+        let keyword_res = self.parse_keyword(&word)?;
+        if keyword_res == true {
+            return Ok(())
         }
+        self.parse_identifier(&word)?;
+            Ok(())
     }
 
-    fn parse_keyword(&mut self, word: &String) -> Result<()> {
+    fn parse_keyword(&mut self, word: &String) -> Result<bool> {
         match word.as_str() {
             "hvis" => {
                 let condition = self.parse_condition()?;
@@ -88,9 +90,9 @@ impl Parser<'_> {
                     block: block,
                 });
 
-                Ok(())
+                Ok(true)
             }
-            _ => Err(anyhow!("Unknown keyword: {}", word)),
+            _ => Ok(false),
         }
     }
 
@@ -114,7 +116,7 @@ impl Parser<'_> {
                     Some(x) => {
                         block.push(x);
                     }
-                    None => return Err(anyhow!("no ending bracket found")),
+                    None => return Err(anyhow!("No ending bracket found")),
                 };
             }
         }
@@ -127,7 +129,7 @@ impl Parser<'_> {
             match self.code.peek() {
                 Some('{') => break,
                 Some(_) => condition.push(self.code.next().unwrap()),
-                None => return Err(anyhow!("Condition must be on one line")),
+                None => return Err(anyhow!("No block found")),
             }
         }
         Parser::parse(condition.chars().peekable())
