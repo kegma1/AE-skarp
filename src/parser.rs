@@ -1,6 +1,5 @@
 use anyhow::{anyhow, Result};
-use std::io::{BufReader, Read, BufRead};
-use std::{io::Lines, iter::Peekable, str::Chars};
+use std::{iter::Peekable, str::Chars};
 
 #[derive(Debug)]
 pub enum Op {
@@ -13,44 +12,38 @@ pub enum Node {
     PushInt(i64),
     Operator(Op),
     Identifier(String),
-    If{condition: Vec<Node>, block: Vec<Node>}
+    If {
+        condition: Vec<Node>,
+        block: Vec<Node>,
+    },
 }
 
-pub struct Parser<R: Read> {
-    lines: Lines<BufReader<R>>,
+pub struct Parser<'a> {
+    code: Peekable<Chars<'a>>,
     ast: Vec<Node>,
 }
 
-impl<R: Read> Parser<R> {
-    pub fn parse(lines: Lines<BufReader<R>>) -> Result<Vec<Node>> {
-        let mut parser = Parser { lines, ast: vec![] };
-
-        while let Some(Ok(line)) = parser.lines.next() {
-            parser.parse_line(&mut line.chars().peekable())?;
-        }
-
-        Ok(parser.ast)
-    }
-
-    fn parse_line(&mut self, line: &mut Peekable<Chars>) -> Result<()> {
+impl Parser<'_> {
+    pub fn parse(code: Peekable<Chars>) -> Result<Vec<Node>> {
+        let mut parser = Parser { code, ast: vec![] };
         loop {
-            match line.peek() {
-                Some('0'..='9') => self.parse_number(line)?,
+            match parser.code.peek() {
+                Some('0'..='9') => parser.parse_number()?,
                 Some(c) if c.is_whitespace() => {
-                    line.next();
+                    parser.code.next();
                 }
-                Some(_) => self.parse_word(line)?,
+                Some(_) => parser.parse_word()?,
                 None => break,
             }
         }
-        Ok(())
+        Ok(parser.ast)
     }
 
-    fn parse_number(&mut self, line: &mut Peekable<Chars>) -> Result<()> {
+    fn parse_number(&mut self) -> Result<()> {
         let mut num_string = String::from("");
         loop {
-            match line.peek() {
-                Some('0'..='9') => num_string.push(line.next().unwrap()),
+            match self.code.peek() {
+                Some('0'..='9') => num_string.push(self.code.next().unwrap()),
                 _ => break,
             }
         }
@@ -59,13 +52,13 @@ impl<R: Read> Parser<R> {
         Ok(())
     }
 
-    fn parse_word(&mut self, line: &mut Peekable<Chars>) -> Result<()> {
+    fn parse_word(&mut self) -> Result<()> {
         let mut word = String::from("");
 
         loop {
-            match line.peek() {
+            match self.code.peek() {
                 Some(c) if c.is_whitespace() => break,
-                Some(_) => word.push(line.next().unwrap()),
+                Some(_) => word.push(self.code.next().unwrap()),
                 None => break,
             }
         }
@@ -76,7 +69,7 @@ impl<R: Read> Parser<R> {
 
         if let Ok(_) = self.parse_operator(&word) {
             Ok(())
-        } else if let Ok(_) = self.parse_keyword(&word, line) {
+        } else if let Ok(_) = self.parse_keyword(&word) {
             Ok(())
         } else {
             self.parse_identifier(&word)?;
@@ -84,38 +77,61 @@ impl<R: Read> Parser<R> {
         }
     }
 
-    fn parse_keyword(&mut self, word: &String, line: &mut Peekable<Chars>) -> Result<()> {
+    fn parse_keyword(&mut self, word: &String) -> Result<()> {
         match word.as_str() {
             "hvis" => {
-                let condition = self.parse_condition(line)?;
-                let block = self.parse_block(line)?;
-    
-                self.ast.push(Node::If { condition, block: block });
-    
+                let condition = self.parse_condition()?;
+                let block = self.parse_block()?;
+
+                self.ast.push(Node::If {
+                    condition,
+                    block: block,
+                });
+
                 Ok(())
             }
             _ => Err(anyhow!("Unknown keyword: {}", word)),
         }
-    }  
-
-    fn parse_block(&mut self, line: &mut Peekable<Chars>) -> Result<Vec<Node>> {
-        let mut block = String::new();
-
-        Parser::parse(BufReader::new(block.as_bytes()).lines())
     }
 
-    fn parse_condition(&mut self, line: &mut Peekable<Chars>)  -> Result<Vec<Node>> {
-        let mut condition = String::from("");
-        loop {
-            match line.peek() {
-                Some('{') => break,
-                Some(_) => condition.push(line.next().unwrap()),
-                None => return Err(anyhow!("Condition must be on one line"))
+    fn parse_block(&mut self) -> Result<Vec<Node>> {
+        let mut block = String::from("");
+        if let Some('{') = self.code.peek() {
+            self.code.next();
+            let mut bracket_count = 1;
+            while bracket_count > 0 {
+                match self.code.next() {
+                    Some('{') => {
+                        bracket_count += 1;
+                        block.push('{')
+                    }
+                    Some('}') => {
+                        bracket_count -= 1;
+                        if bracket_count != 0 {
+                            block.push('}')
+                        }
+                    }
+                    Some(x) => {
+                        block.push(x);
+                    }
+                    None => return Err(anyhow!("no ending bracket found")),
+                };
             }
         }
-        Parser::parse(BufReader::new(condition.as_bytes()).lines())
+        Parser::parse(block.chars().peekable())
     }
-   
+
+    fn parse_condition(&mut self) -> Result<Vec<Node>> {
+        let mut condition = String::from("");
+        loop {
+            match self.code.peek() {
+                Some('{') => break,
+                Some(_) => condition.push(self.code.next().unwrap()),
+                None => return Err(anyhow!("Condition must be on one line")),
+            }
+        }
+        Parser::parse(condition.chars().peekable())
+    }
 
     fn parse_operator(&mut self, word: &String) -> Result<()> {
         match word.as_str() {
