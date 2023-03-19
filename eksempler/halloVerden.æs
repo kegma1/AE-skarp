@@ -1,3 +1,4 @@
-hvis 10 10 + 20 == {
-    69 skrivnl
+0 når dup 10 <= {
+    dup skriv
+    1 +
 }

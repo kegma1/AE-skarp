@@ -16,6 +16,13 @@ pub enum Node {
         condition: Vec<Node>,
         block: Vec<Node>,
     },
+    Else {
+        block: Vec<Node>,
+    },
+    While {
+        condition: Vec<Node>,
+        block: Vec<Node>,
+    }
 }
 
 pub struct Parser<'a> {
@@ -81,16 +88,41 @@ impl Parser<'_> {
 
     fn parse_keyword(&mut self, word: &String) -> Result<bool> {
         match word.as_str() {
+            "når" => {
+                let condition = self.parse_condition()?;
+                let block = self.parse_block()?;
+
+                self.ast.push(Node::While {
+                    condition,
+                    block,
+                });
+
+                Ok(true)
+            }
             "hvis" => {
                 let condition = self.parse_condition()?;
                 let block = self.parse_block()?;
 
                 self.ast.push(Node::If {
                     condition,
-                    block: block,
+                    block,
                 });
 
                 Ok(true)
+            }
+            "ellers" => {
+                self.code.next();
+                if let Some(Node::If { condition: _, block: _ }) = self.ast.last(){
+                    let block = self.parse_block()?;
+                    self.ast.push(Node::Else {
+                        block,
+                    });
+    
+                    Ok(true)
+                } else {
+                    Err(anyhow!("Else block can only end if block"))
+                }
+                
             }
             _ => Ok(false),
         }
@@ -119,6 +151,8 @@ impl Parser<'_> {
                     None => return Err(anyhow!("No ending bracket found")),
                 };
             }
+        } else {
+            return Err(anyhow!("No block found"))
         }
         Parser::parse(block.chars().peekable())
     }
