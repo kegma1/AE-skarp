@@ -5,11 +5,25 @@ use std::{iter::Peekable, str::Chars};
 pub enum Op {
     SumInt,
     SubInt,
+    MultInt,
+    DivInt,
+    ModInt,
+
+    EqInt,
+    LtInt,
+    GtInt,
+    LqInt,
+    GqInt,
+
+    Dup,
+
+    Println,
 }
 
 #[derive(Debug)]
 pub enum Node {
     PushInt(i64),
+    PushBool(bool),
     Operator(Op),
     Identifier(String),
     If {
@@ -88,6 +102,14 @@ impl Parser<'_> {
 
     fn parse_keyword(&mut self, word: &String) -> Result<bool> {
         match word.as_str() {
+            "usann" => {
+                self.ast.push(Node::PushBool(false));
+                Ok(true)
+            }
+            "sann" => {
+                self.ast.push(Node::PushBool(true));
+                Ok(true)
+            }
             "når" => {
                 let condition = self.parse_condition()?;
                 let block = self.parse_block()?;
@@ -111,7 +133,9 @@ impl Parser<'_> {
                 Ok(true)
             }
             "ellers" => {
-                self.code.next();
+                while self.code.peek().unwrap().is_whitespace() {
+                    self.code.next();
+                }
                 if let Some(Node::If { condition: _, block: _ }) = self.ast.last(){
                     let block = self.parse_block()?;
                     self.ast.push(Node::Else {
@@ -166,7 +190,12 @@ impl Parser<'_> {
                 None => return Err(anyhow!("No block found")),
             }
         }
-        Parser::parse(condition.chars().peekable())
+        let condition_ast = Parser::parse(condition.chars().peekable())?;
+        if !condition_ast.is_empty() {
+            Ok(condition_ast)
+        } else {
+            Err(anyhow!("no condition found"))
+        }
     }
 
     fn parse_operator(&mut self, word: &String) -> Result<()> {
@@ -177,6 +206,46 @@ impl Parser<'_> {
             }
             "-" => {
                 self.ast.push(Node::Operator(Op::SubInt));
+                Ok(())
+            }
+            "*" => {
+                self.ast.push(Node::Operator(Op::MultInt));
+                Ok(())
+            }
+            "/" => {
+                self.ast.push(Node::Operator(Op::DivInt));
+                Ok(())
+            }
+            "%" => {
+                self.ast.push(Node::Operator(Op::ModInt));
+                Ok(())
+            }
+            "==" => {
+                self.ast.push(Node::Operator(Op::EqInt));
+                Ok(())
+            }
+            "<" => {
+                self.ast.push(Node::Operator(Op::LtInt));
+                Ok(())
+            }
+            ">" => {
+                self.ast.push(Node::Operator(Op::GtInt));
+                Ok(())
+            }
+            "<=" => {
+                self.ast.push(Node::Operator(Op::LqInt));
+                Ok(())
+            }
+            ">=" => {
+                self.ast.push(Node::Operator(Op::GqInt));
+                Ok(())
+            }
+            "dup" => {
+                self.ast.push(Node::Operator(Op::Dup));
+                Ok(())
+            }
+            "skrivnl" => {
+                self.ast.push(Node::Operator(Op::Println));
                 Ok(())
             }
             _ => Err(anyhow!("Unknown operator: {}", word)),

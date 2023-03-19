@@ -2,3 +2,7 @@
     dup skriv
     1 +
 }
+
+hvis usann {
+    mordi
+}
