@@ -36,45 +36,68 @@ pub enum Node {
     While {
         condition: Vec<Node>,
         block: Vec<Node>,
-    }
+    },
+}
+
+#[derive(Debug)]
+pub enum Type {
+    Int,
+    Bool,
 }
 
 pub struct Parser<'a> {
     code: Peekable<Chars<'a>>,
-    ast: Vec<Node>,
+    pub ast: Vec<Node>,
+    pub type_stack: Vec<Type>,
 }
 
 impl Parser<'_> {
-    pub fn parse(code: Peekable<Chars>) -> Result<Vec<Node>> {
-        let mut parser = Parser { code, ast: vec![] };
+    pub fn parse(code: Peekable<Chars>) -> Result<Parser> {
+        let mut parser = Parser {
+            code,
+            ast: vec![],
+            type_stack: vec![],
+        };
         loop {
             match parser.code.peek() {
                 Some('0'..='9') => parser.parse_number()?,
+                Some('-') => parser.parse_number()?,
                 Some(c) if c.is_whitespace() => {
                     parser.code.next();
                 }
-                Some(_) => parser.parse_word()?,
+                Some(_) => parser.parse_word(None)?,
                 None => break,
             }
         }
-        Ok(parser.ast)
+        Ok(parser)
     }
 
     fn parse_number(&mut self) -> Result<()> {
         let mut num_string = String::from("");
         loop {
             match self.code.peek() {
+                Some('-') => {
+                    num_string.push(self.code.next().unwrap());
+                    if let Some('0'..='9') = self.code.peek() {
+                    } else {
+                        return self.parse_word(Some(num_string));
+                    }
+                }
                 Some('0'..='9') => num_string.push(self.code.next().unwrap()),
                 _ => break,
             }
         }
-
         self.ast.push(Node::PushInt(num_string.parse()?));
+        self.type_stack.push(Type::Int);
         Ok(())
     }
 
-    fn parse_word(&mut self) -> Result<()> {
-        let mut word = String::from("");
+    fn parse_word(&mut self, optional_start: Option<String>) -> Result<()> {
+        let mut word = if let Some(start) = optional_start {
+            start
+        } else {
+            String::from("")
+        };
 
         loop {
             match self.code.peek() {
@@ -89,35 +112,34 @@ impl Parser<'_> {
         }
 
         if let Ok(_) = self.parse_operator(&word) {
-            return Ok(())
-        } 
+            return Ok(());
+        }
 
         let keyword_res = self.parse_keyword(&word)?;
         if keyword_res == true {
-            return Ok(())
+            return Ok(());
         }
         self.parse_identifier(&word)?;
-            Ok(())
+        Ok(())
     }
 
     fn parse_keyword(&mut self, word: &String) -> Result<bool> {
         match word.as_str() {
             "usann" => {
                 self.ast.push(Node::PushBool(false));
+                self.type_stack.push(Type::Bool);
                 Ok(true)
             }
             "sann" => {
                 self.ast.push(Node::PushBool(true));
+                self.type_stack.push(Type::Bool);
                 Ok(true)
             }
             "når" => {
                 let condition = self.parse_condition()?;
                 let block = self.parse_block()?;
 
-                self.ast.push(Node::While {
-                    condition,
-                    block,
-                });
+                self.ast.push(Node::While { condition, block });
 
                 Ok(true)
             }
@@ -125,10 +147,7 @@ impl Parser<'_> {
                 let condition = self.parse_condition()?;
                 let block = self.parse_block()?;
 
-                self.ast.push(Node::If {
-                    condition,
-                    block,
-                });
+                self.ast.push(Node::If { condition, block });
 
                 Ok(true)
             }
@@ -136,17 +155,18 @@ impl Parser<'_> {
                 while self.code.peek().unwrap().is_whitespace() {
                     self.code.next();
                 }
-                if let Some(Node::If { condition: _, block: _ }) = self.ast.last(){
+                if let Some(Node::If {
+                    condition: _,
+                    block: _,
+                }) = self.ast.last()
+                {
                     let block = self.parse_block()?;
-                    self.ast.push(Node::Else {
-                        block,
-                    });
-    
+                    self.ast.push(Node::Else { block });
+
                     Ok(true)
                 } else {
                     Err(anyhow!("Else block can only end if block"))
                 }
-                
             }
             _ => Ok(false),
         }
@@ -176,9 +196,9 @@ impl Parser<'_> {
                 };
             }
         } else {
-            return Err(anyhow!("No block found"))
+            return Err(anyhow!("No block found"));
         }
-        Parser::parse(block.chars().peekable())
+        Ok(Parser::parse(block.chars().peekable())?.ast)
     }
 
     fn parse_condition(&mut self) -> Result<Vec<Node>> {
@@ -190,7 +210,7 @@ impl Parser<'_> {
                 None => return Err(anyhow!("No block found")),
             }
         }
-        let condition_ast = Parser::parse(condition.chars().peekable())?;
+        let condition_ast = Parser::parse(condition.chars().peekable())?.ast;
         if !condition_ast.is_empty() {
             Ok(condition_ast)
         } else {
