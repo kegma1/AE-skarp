@@ -1,9 +1,4 @@
 0 når dup 10 <= {
-    dup skriv
+    dup skrivnl
     1 +
-    -1 - 1
-}
-
-hvis usann {
-    mordi
 }

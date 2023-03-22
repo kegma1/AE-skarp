@@ -39,7 +39,7 @@ pub enum Node {
     },
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum Type {
     Int,
     Bool,
@@ -52,11 +52,15 @@ pub struct Parser<'a> {
 }
 
 impl Parser<'_> {
-    pub fn parse(code: Peekable<Chars>) -> Result<Parser> {
+    pub fn parse(code: Peekable<Chars>, context: Option<Vec<Type>>) -> Result<Parser> {
         let mut parser = Parser {
             code,
             ast: vec![],
-            type_stack: vec![],
+            type_stack: if let Some(ctx) = context {
+                ctx
+            } else {
+                vec![]
+            },
         };
         loop {
             match parser.code.peek() {
@@ -111,7 +115,8 @@ impl Parser<'_> {
             return Ok(());
         }
 
-        if let Ok(_) = self.parse_operator(&word) {
+        let operator_res = self.parse_operator(&word)?;
+        if operator_res == true {
             return Ok(());
         }
 
@@ -198,7 +203,7 @@ impl Parser<'_> {
         } else {
             return Err(anyhow!("No block found"));
         }
-        Ok(Parser::parse(block.chars().peekable())?.ast)
+        Ok(Parser::parse(block.chars().peekable(), Some(self.type_stack.clone()))?.ast)
     }
 
     fn parse_condition(&mut self) -> Result<Vec<Node>> {
@@ -210,7 +215,7 @@ impl Parser<'_> {
                 None => return Err(anyhow!("No block found")),
             }
         }
-        let condition_ast = Parser::parse(condition.chars().peekable())?.ast;
+        let condition_ast = Parser::parse(condition.chars().peekable(), Some(self.type_stack.clone()))?.ast;
         if !condition_ast.is_empty() {
             Ok(condition_ast)
         } else {
@@ -218,57 +223,141 @@ impl Parser<'_> {
         }
     }
 
-    fn parse_operator(&mut self, word: &String) -> Result<()> {
+    fn parse_operator(&mut self, word: &String) -> Result<bool> {
         match word.as_str() {
             "+" => {
-                self.ast.push(Node::Operator(Op::SumInt));
-                Ok(())
+                let b = self.type_stack.pop().unwrap();
+                let a = self.type_stack.pop().unwrap();
+                match (a, b) {
+                    (Type::Int, Type::Int) => {
+                        self.ast.push(Node::Operator(Op::SumInt));
+                        self.type_stack.push(Type::Int)
+                    }
+                    (_,_) => return Err(anyhow!("{} operator does not support {:?} and {:?}", word, a, b))
+                }
+                Ok(true)
             }
             "-" => {
-                self.ast.push(Node::Operator(Op::SubInt));
-                Ok(())
+                let b = self.type_stack.pop().unwrap();
+                let a = self.type_stack.pop().unwrap();
+                match (a, b) {
+                    (Type::Int, Type::Int) => {
+                        self.ast.push(Node::Operator(Op::SubInt));
+                        self.type_stack.push(Type::Int)
+                    }
+                    (_,_) => return Err(anyhow!("{} operator does not support {:?} and {:?}", word, a, b))
+                }
+                Ok(true)
             }
             "*" => {
-                self.ast.push(Node::Operator(Op::MultInt));
-                Ok(())
+                let b = self.type_stack.pop().unwrap();
+                let a = self.type_stack.pop().unwrap();
+                match (a, b) {
+                    (Type::Int, Type::Int) => {
+                        self.ast.push(Node::Operator(Op::MultInt));
+                        self.type_stack.push(Type::Int)
+                    }
+                    (_,_) => return Err(anyhow!("{} operator does not support {:?} and {:?}", word, a, b))
+                }
+                Ok(true)
             }
             "/" => {
-                self.ast.push(Node::Operator(Op::DivInt));
-                Ok(())
+                let b = self.type_stack.pop().unwrap();
+                let a = self.type_stack.pop().unwrap();
+                match (a, b) {
+                    (Type::Int, Type::Int) => {
+                        self.ast.push(Node::Operator(Op::DivInt));
+                        self.type_stack.push(Type::Int)
+                    }
+                    (_,_) => return Err(anyhow!("{} operator does not support {:?} and {:?}", word, a, b))
+                }
+                Ok(true)
             }
             "%" => {
-                self.ast.push(Node::Operator(Op::ModInt));
-                Ok(())
+                let b = self.type_stack.pop().unwrap();
+                let a = self.type_stack.pop().unwrap();
+                match (a, b) {
+                    (Type::Int, Type::Int) => {
+                        self.ast.push(Node::Operator(Op::ModInt));
+                        self.type_stack.push(Type::Int)
+                    }
+                    (_,_) => return Err(anyhow!("{} operator does not support {:?} and {:?}", word, a, b))
+                }
+                Ok(true)
             }
             "==" => {
-                self.ast.push(Node::Operator(Op::EqInt));
-                Ok(())
+                let b = self.type_stack.pop().unwrap();
+                let a = self.type_stack.pop().unwrap();
+                match (a, b) {
+                    (Type::Int, Type::Int) => {
+                        self.ast.push(Node::Operator(Op::EqInt));
+                        self.type_stack.push(Type::Bool)
+                    }
+                    (_,_) => return Err(anyhow!("{} operator does not support {:?} and {:?}", word, a, b))
+                }
+                Ok(true)
             }
             "<" => {
-                self.ast.push(Node::Operator(Op::LtInt));
-                Ok(())
+                let b = self.type_stack.pop().unwrap();
+                let a = self.type_stack.pop().unwrap();
+                match (a, b) {
+                    (Type::Int, Type::Int) => {
+                        self.ast.push(Node::Operator(Op::LtInt));
+                        self.type_stack.push(Type::Bool)
+                    }
+                    (_,_) => return Err(anyhow!("{} operator does not support {:?} and {:?}", word, a, b))
+                }
+                Ok(true)
             }
             ">" => {
-                self.ast.push(Node::Operator(Op::GtInt));
-                Ok(())
+                let b = self.type_stack.pop().unwrap();
+                let a = self.type_stack.pop().unwrap();
+                match (a, b) {
+                    (Type::Int, Type::Int) => {
+                        self.ast.push(Node::Operator(Op::GtInt));
+                        self.type_stack.push(Type::Bool)
+                    }
+                    (_,_) => return Err(anyhow!("{} operator does not support {:?} and {:?}", word, a, b))
+                }
+                Ok(true)
             }
             "<=" => {
-                self.ast.push(Node::Operator(Op::LqInt));
-                Ok(())
+                let b = self.type_stack.pop().unwrap();
+                let a = self.type_stack.pop().unwrap();
+                match (a, b) {
+                    (Type::Int, Type::Int) => {
+                        self.ast.push(Node::Operator(Op::LqInt));
+                        self.type_stack.push(Type::Bool)
+                    }
+                    (_,_) => return Err(anyhow!("{} operator does not support {:?} and {:?}", word, a, b))
+                }
+                Ok(true)
             }
             ">=" => {
-                self.ast.push(Node::Operator(Op::GqInt));
-                Ok(())
+                let b = self.type_stack.pop().unwrap();
+                let a = self.type_stack.pop().unwrap();
+                match (a, b) {
+                    (Type::Int, Type::Int) => {
+                        self.ast.push(Node::Operator(Op::GqInt));
+                        self.type_stack.push(Type::Bool)
+                    }
+                    (_,_) => return Err(anyhow!("{} operator does not support {:?} and {:?}", word, a, b))
+                }
+                Ok(true)
             }
             "dup" => {
-                self.ast.push(Node::Operator(Op::Dup));
-                Ok(())
+                let Some(b) = self.type_stack.pop() else {
+                    return Err(anyhow!("{} needs ateast 1 argument", word));
+                };
+                self.type_stack.push(b);
+                self.type_stack.push(b);
+                Ok(true)
             }
             "skrivnl" => {
-                self.ast.push(Node::Operator(Op::Println));
-                Ok(())
+                let _ = self.type_stack.pop().unwrap();
+                Ok(true)
             }
-            _ => Err(anyhow!("Unknown operator: {}", word)),
+            _ => Ok(false),
         }
     }
 
