@@ -355,6 +355,7 @@ impl Parser<'_> {
                 Ok(true)
             }
             "skrivnl" => {
+                self.ast.push(Node::Operator(Op::Println));
                 let _ = self.type_stack.pop().unwrap();
                 self.ast.push(Node::Operator(Op::Println));
                 Ok(true)
