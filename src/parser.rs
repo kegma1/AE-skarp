@@ -349,12 +349,14 @@ impl Parser<'_> {
                 let Some(b) = self.type_stack.pop() else {
                     return Err(anyhow!("{} needs ateast 1 argument", word));
                 };
+                self.ast.push(Node::Operator(Op::Dup));
                 self.type_stack.push(b);
                 self.type_stack.push(b);
                 Ok(true)
             }
             "skrivnl" => {
                 let _ = self.type_stack.pop().unwrap();
+                self.ast.push(Node::Operator(Op::Println));
                 Ok(true)
             }
             _ => Ok(false),
