@@ -63,7 +63,7 @@ impl fmt::Debug for Node {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub enum Value {
     Int(i64),
     Bool(bool),
@@ -83,4 +83,8 @@ impl fmt::Display for Value {
 pub enum Type {
     Int,
     Bool,
+}
+
+pub struct Runtime {
+    pub stack: Vec<Value>
 }

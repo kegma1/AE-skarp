@@ -1,3 +1,5 @@
+1 2 + skrivnl
+
 0 når dup 10 <= {
     dup skrivnl
     1 +
