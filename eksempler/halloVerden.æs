@@ -1,6 +1,8 @@
-1 2 + skrivnl
-
-0 når dup 10 <= {
-    dup skrivnl
+0 når dup 5 < {
+    0 når dup 5 <= {
+        dup skrivnl
+        1 +
+    }
+    slipp
     1 +
 }

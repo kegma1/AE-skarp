@@ -16,8 +16,34 @@ pub enum Op {
     GqInt,
 
     Dup,
+    Drop,
 
     Println,
+}
+
+pub struct Pointer {
+    offset: isize,
+}
+
+impl Pointer {
+    pub fn new(offset: isize) -> Pointer {
+        Pointer { offset }
+    }
+
+    pub fn resolve(&self, current_pos: usize) -> usize {
+        if self.offset >= 0 {
+            current_pos + self.offset as usize
+        } else {
+            current_pos - (-self.offset) as usize
+        }
+    }
+}
+
+impl fmt::Display for Pointer {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.offset)?;
+        Ok(())
+    }
 }
 
 pub enum Node {
@@ -29,15 +55,13 @@ pub enum Node {
         func: fn(&[Value]) -> Option<Vec<Value>>,
     },
     Identifier(String),
+    Jump(Pointer),
+    JumpIfFalse(Pointer),
     If {
         condition: Vec<Node>,
         block: Vec<Node>,
     },
     Else {
-        block: Vec<Node>,
-    },
-    While {
-        condition: Vec<Node>,
         block: Vec<Node>,
     },
 }
@@ -54,10 +78,8 @@ impl fmt::Debug for Node {
                 write!(f, "{:?}", block)
             },
             Node::Else { block } => write!(f, "{:?}", block),
-            Node::While { condition, block } => {
-                write!(f, "{:?}", condition)?;
-                write!(f, "{:?}", block)
-            },
+            Node::Jump(x) => write!(f, "Jmp({})", x),
+            Node::JumpIfFalse(x) => write!(f, "Jnt({})", x),
         }?;
         Ok(())
     }
@@ -86,5 +108,6 @@ pub enum Type {
 }
 
 pub struct Runtime {
-    pub stack: Vec<Value>
+    pub stack: Vec<Value>,
+    pub op_counter: usize
 }

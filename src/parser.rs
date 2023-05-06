@@ -98,10 +98,15 @@ impl Parser<'_> {
                 Ok(true)
             }
             "når" => {
-                let condition = self.parse_condition()?;
-                let block = self.parse_block()?;
+                let mut condition = self.parse_condition()?;
+                let mut block = self.parse_block()?;
+                let condition_start = -(block.len() as isize + condition.len() as isize + 2);
+                
+                self.ast.append(&mut condition);
+                self.ast.push(Node::JumpIfFalse(Pointer::new(block.len() as isize + 1)));
 
-                self.ast.push(Node::While { condition, block });
+                self.ast.append(&mut block);
+                self.ast.push(Node::Jump(Pointer::new(condition_start)));
 
                 Ok(true)
             }
@@ -217,7 +222,7 @@ impl Parser<'_> {
                 let a = self.type_stack.pop().unwrap();
                 match (a, b) {
                     (Type::Int, Type::Int) => {
-                        self.ast.push(Node::Operator{op:Op::MultInt, arity:2, func:|args| match (args.get(0), args.get(0)) {
+                        self.ast.push(Node::Operator{op:Op::MultInt, arity:2, func:|args| match (args.get(0), args.get(1)) {
                             (Some(Value::Int(a)), Some(Value::Int(b))) => Some(vec![Value::Int(a * b)]),
                             _ => None,
                         }});
@@ -232,7 +237,7 @@ impl Parser<'_> {
                 let a = self.type_stack.pop().unwrap();
                 match (a, b) {
                     (Type::Int, Type::Int) => {
-                        self.ast.push(Node::Operator{op:Op::DivInt, arity:2, func:|args| match (args.get(0), args.get(0)) {
+                        self.ast.push(Node::Operator{op:Op::DivInt, arity:2, func:|args| match (args.get(0), args.get(1)) {
                             (Some(Value::Int(a)), Some(Value::Int(b))) => Some(vec![Value::Int(a / b)]),
                             _ => None,
                         }});
@@ -247,7 +252,7 @@ impl Parser<'_> {
                 let a = self.type_stack.pop().unwrap();
                 match (a, b) {
                     (Type::Int, Type::Int) => {
-                        self.ast.push(Node::Operator{op:Op::ModInt, arity:2, func:|args| match (args.get(0), args.get(0)) {
+                        self.ast.push(Node::Operator{op:Op::ModInt, arity:2, func:|args| match (args.get(0), args.get(1)) {
                             (Some(Value::Int(a)), Some(Value::Int(b))) => Some(vec![Value::Int(a % b)]),
                             _ => None,
                         }});
@@ -262,7 +267,7 @@ impl Parser<'_> {
                 let a = self.type_stack.pop().unwrap();
                 match (a, b) {
                     (Type::Int, Type::Int) => {
-                        self.ast.push(Node::Operator{op:Op::EqInt, arity:2, func:|args| match (args.get(0), args.get(0)) {
+                        self.ast.push(Node::Operator{op:Op::EqInt, arity:2, func:|args| match (args.get(0), args.get(1)) {
                             (Some(Value::Int(a)), Some(Value::Int(b))) => Some(vec![Value::Bool(a == b)]),
                             _ => None,
                         }});
@@ -277,7 +282,7 @@ impl Parser<'_> {
                 let a = self.type_stack.pop().unwrap();
                 match (a, b) {
                     (Type::Int, Type::Int) => {
-                        self.ast.push(Node::Operator{op:Op::LtInt, arity:2, func:|args| match (args.get(0), args.get(0)) {
+                        self.ast.push(Node::Operator{op:Op::LtInt, arity:2, func:|args| match (args.get(0), args.get(1)) {
                             (Some(Value::Int(a)), Some(Value::Int(b))) => Some(vec![Value::Bool(a < b)]),
                             _ => None,
                         }});
@@ -292,7 +297,7 @@ impl Parser<'_> {
                 let a = self.type_stack.pop().unwrap();
                 match (a, b) {
                     (Type::Int, Type::Int) => {
-                        self.ast.push(Node::Operator{op:Op::GtInt, arity:2, func:|args| match (args.get(0), args.get(0)) {
+                        self.ast.push(Node::Operator{op:Op::GtInt, arity:2, func:|args| match (args.get(0), args.get(1)) {
                             (Some(Value::Int(a)), Some(Value::Int(b))) => Some(vec![Value::Bool(a > b)]),
                             _ => None,
                         }});
@@ -307,10 +312,11 @@ impl Parser<'_> {
                 let a = self.type_stack.pop().unwrap();
                 match (a, b) {
                     (Type::Int, Type::Int) => {
-                        self.ast.push(Node::Operator{op:Op::LqInt, arity:2, func:|args| match (args.get(0), args.get(0)) {
+                        self.ast.push(Node::Operator{op:Op::LqInt, arity:2, func:|args| match (args.get(0), args.get(1)) {
                             (Some(Value::Int(a)), Some(Value::Int(b))) => Some(vec![Value::Bool(a <= b)]),
                             _ => None,
-                        }});
+                        }
+                    });
                         self.type_stack.push(Type::Bool)
                     }
                     (_,_) => return Err(anyhow!("{} operator does not support {:?} and {:?}", word, a, b))
@@ -322,7 +328,7 @@ impl Parser<'_> {
                 let a = self.type_stack.pop().unwrap();
                 match (a, b) {
                     (Type::Int, Type::Int) => {
-                        self.ast.push(Node::Operator{op:Op::GqInt, arity:2, func:|args| match (args.get(0), args.get(0)) {
+                        self.ast.push(Node::Operator{op:Op::GqInt, arity:2, func:|args| match (args.get(0), args.get(1)) {
                             (Some(Value::Int(a)), Some(Value::Int(b))) => Some(vec![Value::Bool(a >= b)]),
                             _ => None,
                         }});
@@ -337,6 +343,15 @@ impl Parser<'_> {
                     return Err(anyhow!("{} needs ateast 1 argument", word));
                 };
                 self.ast.push(Node::Operator { op: Op::Dup, arity: 1, func: |args| Some(vec![args[0].clone(), args[0].clone()]) });
+                self.type_stack.push(b);
+                self.type_stack.push(b);
+                Ok(true)
+            }
+            "slipp" => {
+                let Some(b) = self.type_stack.pop() else {
+                    return Err(anyhow!("{} needs ateast 1 argument", word));
+                };
+                self.ast.push(Node::Operator { op: Op::Drop, arity: 1, func: |_args| None });
                 self.type_stack.push(b);
                 self.type_stack.push(b);
                 Ok(true)
