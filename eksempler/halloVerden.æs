@@ -1,9 +1,8 @@
-hvis 3 2 % 0 ==:
-    sann skrivnl
-
-10 10 +
-
-
-hvis sann:
-    10 +
-    
+0 når dup 10 <= {
+    hvis dup 2 % 0 == {
+        1 skrivnl
+    } ellers {
+        0 skrivnl
+    }
+    1 +
+}

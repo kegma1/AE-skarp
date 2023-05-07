@@ -1,32 +1,27 @@
-mod common;
-// mod interpret;
-mod lexer;
 mod parser;
+mod utils;
+mod eval;
 
-// use interpret::interpret;
-use lexer::lex;
-use parser::parse;
+use anyhow::Result;
+use parser::Parser;
 use std::env;
-use std::fs;
+use std::fs::File;
+use std::io::{BufReader, Read};
 
-fn main() {
+fn main() -> Result<()> {
     let args = env::args().collect::<Vec<String>>();
     let path: Option<&String> = args.get(1);
-
     if let Some(p) = path {
-        let source_code = fs::read_to_string(p).expect(&format!("Kunne ikke lese fil '{}'", p));
-        let lexed = lex(&String::from(source_code + " ")).unwrap();
-        let (parsed, stack) = parse(lexed, None).unwrap();
-        println!("{:?}", stack);
-        print_ast(&parsed);
-        // let _ = interpret(parsed);
+        let mut source_code: String = String::from("");
+        BufReader::new(File::open(p)?).read_to_string(&mut source_code)?;
+        let ast = Parser::parse(source_code.chars().peekable(), None)?;
+        for (i ,node) in ast.ast.iter().enumerate() {
+            println!("{}: {:?}", i, node)
+        }
+        println!("\n");
+        eval::eval(ast.ast)?;
     } else {
         println!("no argument given")
     }
-}
-
-fn print_ast(ast: &Vec<parser::Node>) {
-    for (i, op) in ast.iter().enumerate() {
-        println!("{}: {:?}", i, op)
-    }
+    Ok(())
 }
