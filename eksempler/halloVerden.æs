@@ -1,8 +1,8 @@
-0 når dup 5 < {
-    0 når dup 5 <= {
-        dup skrivnl
-        1 +
+0 når dup 10 <= {
+    hvis dup 2 % 0 == {
+        1 skrivnl
+    } ellers {
+        0 skrivnl
     }
-    slipp
     1 +
 }

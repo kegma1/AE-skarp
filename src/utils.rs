@@ -57,13 +57,7 @@ pub enum Node {
     Identifier(String),
     Jump(Pointer),
     JumpIfFalse(Pointer),
-    If {
-        condition: Vec<Node>,
-        block: Vec<Node>,
-    },
-    Else {
-        block: Vec<Node>,
-    },
+    EndOfIf,
 }
 
 impl fmt::Debug for Node {
@@ -73,13 +67,9 @@ impl fmt::Debug for Node {
             Node::PushBool(x) => write!(f, "{}", x),
             Node::Operator { op, arity: _, func: _ } => write!(f, "{:?}", op),
             Node::Identifier(x) => write!(f, "{}", x),
-            Node::If { condition, block } => {
-                write!(f, "{:?}", condition)?;
-                write!(f, "{:?}", block)
-            },
-            Node::Else { block } => write!(f, "{:?}", block),
             Node::Jump(x) => write!(f, "Jmp({})", x),
             Node::JumpIfFalse(x) => write!(f, "Jnt({})", x),
+            Node::EndOfIf => write!(f, "EndOfIf"),
         }?;
         Ok(())
     }
@@ -101,7 +91,7 @@ impl fmt::Display for Value {
 }
 
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Type {
     Int,
     Bool,

@@ -111,10 +111,14 @@ impl Parser<'_> {
                 Ok(true)
             }
             "hvis" => {
-                let condition = self.parse_condition()?;
-                let block = self.parse_block()?;
+                let mut condition = self.parse_condition()?;
+                let mut block = self.parse_block()?;
+                
+                self.ast.append(&mut condition);
+                self.ast.push(Node::JumpIfFalse(Pointer::new(block.len() as isize + 1)));
 
-                self.ast.push(Node::If { condition, block });
+                self.ast.append(&mut block);
+                self.ast.push(Node::EndOfIf);
 
                 Ok(true)
             }
@@ -122,13 +126,11 @@ impl Parser<'_> {
                 while self.code.peek().unwrap().is_whitespace() {
                     self.code.next();
                 }
-                if let Some(Node::If {
-                    condition: _,
-                    block: _,
-                }) = self.ast.last()
-                {
-                    let block = self.parse_block()?;
-                    self.ast.push(Node::Else { block });
+                if let Some(Node::EndOfIf) = self.ast.last() {
+                    let mut block = self.parse_block()?;
+                    self.ast.pop();
+                    self.ast.push(Node::Jump(Pointer::new(block.len() as isize)));
+                    self.ast.append(&mut block);
 
                     Ok(true)
                 } else {
@@ -177,12 +179,23 @@ impl Parser<'_> {
                 None => return Err(anyhow!("No block found")),
             }
         }
-        let condition_ast = Parser::parse(condition.chars().peekable(), Some(self.type_stack.clone()))?.ast;
-        if !condition_ast.is_empty() {
-            Ok(condition_ast)
+        let mut condition_parser = Parser::parse(condition.chars().peekable(), Some(self.type_stack.clone()))?;
+        let condition_ast = condition_parser.ast;
+        
+        if let Some(Type::Bool) = condition_parser.type_stack.pop() {
+            if condition_parser.type_stack != self.type_stack {
+                return Err(anyhow!("condition must only leave a bool at the top of the stack"));
+            }
+
+            if !condition_ast.is_empty() {
+                Ok(condition_ast)
+            } else {
+                Err(anyhow!("no condition found"))
+            }
         } else {
-            Err(anyhow!("no condition found"))
+            Err(anyhow!("condition must leave a bool on the top of the stack"))
         }
+        
     }
 
     fn parse_operator(&mut self, word: &String) -> Result<bool> {

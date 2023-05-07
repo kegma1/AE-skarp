@@ -24,8 +24,6 @@ pub fn eval(ast: Vec<Node>) -> Result<u8> {
                 
             },
             Node::Identifier(_) => todo!(),
-            Node::If { condition: _, block: _ } => todo!(),
-            Node::Else { block: _ } => todo!(),
             Node::Jump(x) => rt.op_counter = x.resolve(rt.op_counter),
             Node::JumpIfFalse(x) => {
                 let Some(Value::Bool(condition_resualt)) = rt.stack.pop() else {
@@ -36,6 +34,7 @@ pub fn eval(ast: Vec<Node>) -> Result<u8> {
                     rt.op_counter = x.resolve(rt.op_counter)
                 }
             },
+            Node::EndOfIf => (),
         }
         rt.op_counter += 1;
     }
