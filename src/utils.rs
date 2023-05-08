@@ -1,6 +1,5 @@
 use std::fmt;
 
-
 #[derive(Debug)]
 pub enum Op {
     SumInt,
@@ -65,7 +64,11 @@ impl fmt::Debug for Node {
         match self {
             Node::PushInt(x) => write!(f, "{}", x),
             Node::PushBool(x) => write!(f, "{}", x),
-            Node::Operator { op, arity: _, func: _ } => write!(f, "{:?}", op),
+            Node::Operator {
+                op,
+                arity: _,
+                func: _,
+            } => write!(f, "{:?}", op),
             Node::Identifier(x) => write!(f, "{}", x),
             Node::Jump(x) => write!(f, "Jmp({})", x),
             Node::JumpIfFalse(x) => write!(f, "Jnt({})", x),
@@ -90,7 +93,6 @@ impl fmt::Display for Value {
     }
 }
 
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Type {
     Int,
@@ -99,5 +101,5 @@ pub enum Type {
 
 pub struct Runtime {
     pub stack: Vec<Value>,
-    pub op_counter: usize
+    pub op_counter: usize,
 }

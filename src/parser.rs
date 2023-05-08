@@ -1,6 +1,6 @@
+use crate::utils::*;
 use anyhow::{anyhow, Result};
 use std::{iter::Peekable, str::Chars};
-use crate::utils::*;
 
 pub struct Parser<'a> {
     code: Peekable<Chars<'a>>,
@@ -13,11 +13,7 @@ impl Parser<'_> {
         let mut parser = Parser {
             code,
             ast: vec![],
-            type_stack: if let Some(ctx) = context {
-                ctx
-            } else {
-                vec![]
-            },
+            type_stack: if let Some(ctx) = context { ctx } else { vec![] },
         };
         loop {
             match parser.code.peek() {
@@ -101,9 +97,10 @@ impl Parser<'_> {
                 let mut condition = self.parse_condition()?;
                 let mut block = self.parse_block()?;
                 let condition_start = -(block.len() as isize + condition.len() as isize + 2);
-                
+
                 self.ast.append(&mut condition);
-                self.ast.push(Node::JumpIfFalse(Pointer::new(block.len() as isize + 1)));
+                self.ast
+                    .push(Node::JumpIfFalse(Pointer::new(block.len() as isize + 1)));
 
                 self.ast.append(&mut block);
                 self.ast.push(Node::Jump(Pointer::new(condition_start)));
@@ -113,9 +110,10 @@ impl Parser<'_> {
             "hvis" => {
                 let mut condition = self.parse_condition()?;
                 let mut block = self.parse_block()?;
-                
+
                 self.ast.append(&mut condition);
-                self.ast.push(Node::JumpIfFalse(Pointer::new(block.len() as isize + 1)));
+                self.ast
+                    .push(Node::JumpIfFalse(Pointer::new(block.len() as isize + 1)));
 
                 self.ast.append(&mut block);
                 self.ast.push(Node::EndOfIf);
@@ -129,7 +127,8 @@ impl Parser<'_> {
                 if let Some(Node::EndOfIf) = self.ast.last() {
                     let mut block = self.parse_block()?;
                     self.ast.pop();
-                    self.ast.push(Node::Jump(Pointer::new(block.len() as isize)));
+                    self.ast
+                        .push(Node::Jump(Pointer::new(block.len() as isize)));
                     self.ast.append(&mut block);
 
                     Ok(true)
@@ -179,12 +178,15 @@ impl Parser<'_> {
                 None => return Err(anyhow!("No block found")),
             }
         }
-        let mut condition_parser = Parser::parse(condition.chars().peekable(), Some(self.type_stack.clone()))?;
+        let mut condition_parser =
+            Parser::parse(condition.chars().peekable(), Some(self.type_stack.clone()))?;
         let condition_ast = condition_parser.ast;
-        
+
         if let Some(Type::Bool) = condition_parser.type_stack.pop() {
             if condition_parser.type_stack != self.type_stack {
-                return Err(anyhow!("condition must only leave a bool at the top of the stack"));
+                return Err(anyhow!(
+                    "condition must only leave a bool at the top of the stack"
+                ));
             }
 
             if !condition_ast.is_empty() {
@@ -193,9 +195,10 @@ impl Parser<'_> {
                 Err(anyhow!("no condition found"))
             }
         } else {
-            Err(anyhow!("condition must leave a bool on the top of the stack"))
+            Err(anyhow!(
+                "condition must leave a bool on the top of the stack"
+            ))
         }
-        
     }
 
     fn parse_operator(&mut self, word: &String) -> Result<bool> {
@@ -205,13 +208,26 @@ impl Parser<'_> {
                 let a = self.type_stack.pop().unwrap();
                 match (a, b) {
                     (Type::Int, Type::Int) => {
-                        self.ast.push(Node::Operator{ op: Op::SumInt, arity: 2, func: |args| match (args.get(0), args.get(1)) {
-                            (Some(Value::Int(a)), Some(Value::Int(b))) => Some(vec![Value::Int(a + b)]),
-                            _ => None,
-                        }});
+                        self.ast.push(Node::Operator {
+                            op: Op::SumInt,
+                            arity: 2,
+                            func: |args| match (args.get(0), args.get(1)) {
+                                (Some(Value::Int(a)), Some(Value::Int(b))) => {
+                                    Some(vec![Value::Int(a + b)])
+                                }
+                                _ => None,
+                            },
+                        });
                         self.type_stack.push(Type::Int)
                     }
-                    (_,_) => return Err(anyhow!("{} operator does not support {:?} and {:?}", word, a, b))
+                    (_, _) => {
+                        return Err(anyhow!(
+                            "{} operator does not support {:?} and {:?}",
+                            word,
+                            a,
+                            b
+                        ))
+                    }
                 }
                 Ok(true)
             }
@@ -220,13 +236,26 @@ impl Parser<'_> {
                 let a = self.type_stack.pop().unwrap();
                 match (a, b) {
                     (Type::Int, Type::Int) => {
-                        self.ast.push(Node::Operator{ op: Op::SubInt, arity: 2, func: |args| match (args.get(0), args.get(1)) {
-                            (Some(Value::Int(a)), Some(Value::Int(b))) => Some(vec![Value::Int(a - b)]),
-                            _ => None,
-                        }});
+                        self.ast.push(Node::Operator {
+                            op: Op::SubInt,
+                            arity: 2,
+                            func: |args| match (args.get(0), args.get(1)) {
+                                (Some(Value::Int(a)), Some(Value::Int(b))) => {
+                                    Some(vec![Value::Int(a - b)])
+                                }
+                                _ => None,
+                            },
+                        });
                         self.type_stack.push(Type::Int)
                     }
-                    (_,_) => return Err(anyhow!("{} operator does not support {:?} and {:?}", word, a, b))
+                    (_, _) => {
+                        return Err(anyhow!(
+                            "{} operator does not support {:?} and {:?}",
+                            word,
+                            a,
+                            b
+                        ))
+                    }
                 }
                 Ok(true)
             }
@@ -235,13 +264,26 @@ impl Parser<'_> {
                 let a = self.type_stack.pop().unwrap();
                 match (a, b) {
                     (Type::Int, Type::Int) => {
-                        self.ast.push(Node::Operator{op:Op::MultInt, arity:2, func:|args| match (args.get(0), args.get(1)) {
-                            (Some(Value::Int(a)), Some(Value::Int(b))) => Some(vec![Value::Int(a * b)]),
-                            _ => None,
-                        }});
+                        self.ast.push(Node::Operator {
+                            op: Op::MultInt,
+                            arity: 2,
+                            func: |args| match (args.get(0), args.get(1)) {
+                                (Some(Value::Int(a)), Some(Value::Int(b))) => {
+                                    Some(vec![Value::Int(a * b)])
+                                }
+                                _ => None,
+                            },
+                        });
                         self.type_stack.push(Type::Int)
                     }
-                    (_,_) => return Err(anyhow!("{} operator does not support {:?} and {:?}", word, a, b))
+                    (_, _) => {
+                        return Err(anyhow!(
+                            "{} operator does not support {:?} and {:?}",
+                            word,
+                            a,
+                            b
+                        ))
+                    }
                 }
                 Ok(true)
             }
@@ -250,13 +292,26 @@ impl Parser<'_> {
                 let a = self.type_stack.pop().unwrap();
                 match (a, b) {
                     (Type::Int, Type::Int) => {
-                        self.ast.push(Node::Operator{op:Op::DivInt, arity:2, func:|args| match (args.get(0), args.get(1)) {
-                            (Some(Value::Int(a)), Some(Value::Int(b))) => Some(vec![Value::Int(a / b)]),
-                            _ => None,
-                        }});
+                        self.ast.push(Node::Operator {
+                            op: Op::DivInt,
+                            arity: 2,
+                            func: |args| match (args.get(0), args.get(1)) {
+                                (Some(Value::Int(a)), Some(Value::Int(b))) => {
+                                    Some(vec![Value::Int(a / b)])
+                                }
+                                _ => None,
+                            },
+                        });
                         self.type_stack.push(Type::Int)
                     }
-                    (_,_) => return Err(anyhow!("{} operator does not support {:?} and {:?}", word, a, b))
+                    (_, _) => {
+                        return Err(anyhow!(
+                            "{} operator does not support {:?} and {:?}",
+                            word,
+                            a,
+                            b
+                        ))
+                    }
                 }
                 Ok(true)
             }
@@ -265,13 +320,26 @@ impl Parser<'_> {
                 let a = self.type_stack.pop().unwrap();
                 match (a, b) {
                     (Type::Int, Type::Int) => {
-                        self.ast.push(Node::Operator{op:Op::ModInt, arity:2, func:|args| match (args.get(0), args.get(1)) {
-                            (Some(Value::Int(a)), Some(Value::Int(b))) => Some(vec![Value::Int(a % b)]),
-                            _ => None,
-                        }});
+                        self.ast.push(Node::Operator {
+                            op: Op::ModInt,
+                            arity: 2,
+                            func: |args| match (args.get(0), args.get(1)) {
+                                (Some(Value::Int(a)), Some(Value::Int(b))) => {
+                                    Some(vec![Value::Int(a % b)])
+                                }
+                                _ => None,
+                            },
+                        });
                         self.type_stack.push(Type::Int)
                     }
-                    (_,_) => return Err(anyhow!("{} operator does not support {:?} and {:?}", word, a, b))
+                    (_, _) => {
+                        return Err(anyhow!(
+                            "{} operator does not support {:?} and {:?}",
+                            word,
+                            a,
+                            b
+                        ))
+                    }
                 }
                 Ok(true)
             }
@@ -280,13 +348,26 @@ impl Parser<'_> {
                 let a = self.type_stack.pop().unwrap();
                 match (a, b) {
                     (Type::Int, Type::Int) => {
-                        self.ast.push(Node::Operator{op:Op::EqInt, arity:2, func:|args| match (args.get(0), args.get(1)) {
-                            (Some(Value::Int(a)), Some(Value::Int(b))) => Some(vec![Value::Bool(a == b)]),
-                            _ => None,
-                        }});
+                        self.ast.push(Node::Operator {
+                            op: Op::EqInt,
+                            arity: 2,
+                            func: |args| match (args.get(0), args.get(1)) {
+                                (Some(Value::Int(a)), Some(Value::Int(b))) => {
+                                    Some(vec![Value::Bool(a == b)])
+                                }
+                                _ => None,
+                            },
+                        });
                         self.type_stack.push(Type::Bool)
                     }
-                    (_,_) => return Err(anyhow!("{} operator does not support {:?} and {:?}", word, a, b))
+                    (_, _) => {
+                        return Err(anyhow!(
+                            "{} operator does not support {:?} and {:?}",
+                            word,
+                            a,
+                            b
+                        ))
+                    }
                 }
                 Ok(true)
             }
@@ -295,13 +376,26 @@ impl Parser<'_> {
                 let a = self.type_stack.pop().unwrap();
                 match (a, b) {
                     (Type::Int, Type::Int) => {
-                        self.ast.push(Node::Operator{op:Op::LtInt, arity:2, func:|args| match (args.get(0), args.get(1)) {
-                            (Some(Value::Int(a)), Some(Value::Int(b))) => Some(vec![Value::Bool(a < b)]),
-                            _ => None,
-                        }});
+                        self.ast.push(Node::Operator {
+                            op: Op::LtInt,
+                            arity: 2,
+                            func: |args| match (args.get(0), args.get(1)) {
+                                (Some(Value::Int(a)), Some(Value::Int(b))) => {
+                                    Some(vec![Value::Bool(a < b)])
+                                }
+                                _ => None,
+                            },
+                        });
                         self.type_stack.push(Type::Bool)
                     }
-                    (_,_) => return Err(anyhow!("{} operator does not support {:?} and {:?}", word, a, b))
+                    (_, _) => {
+                        return Err(anyhow!(
+                            "{} operator does not support {:?} and {:?}",
+                            word,
+                            a,
+                            b
+                        ))
+                    }
                 }
                 Ok(true)
             }
@@ -310,13 +404,26 @@ impl Parser<'_> {
                 let a = self.type_stack.pop().unwrap();
                 match (a, b) {
                     (Type::Int, Type::Int) => {
-                        self.ast.push(Node::Operator{op:Op::GtInt, arity:2, func:|args| match (args.get(0), args.get(1)) {
-                            (Some(Value::Int(a)), Some(Value::Int(b))) => Some(vec![Value::Bool(a > b)]),
-                            _ => None,
-                        }});
+                        self.ast.push(Node::Operator {
+                            op: Op::GtInt,
+                            arity: 2,
+                            func: |args| match (args.get(0), args.get(1)) {
+                                (Some(Value::Int(a)), Some(Value::Int(b))) => {
+                                    Some(vec![Value::Bool(a > b)])
+                                }
+                                _ => None,
+                            },
+                        });
                         self.type_stack.push(Type::Bool)
                     }
-                    (_,_) => return Err(anyhow!("{} operator does not support {:?} and {:?}", word, a, b))
+                    (_, _) => {
+                        return Err(anyhow!(
+                            "{} operator does not support {:?} and {:?}",
+                            word,
+                            a,
+                            b
+                        ))
+                    }
                 }
                 Ok(true)
             }
@@ -325,14 +432,26 @@ impl Parser<'_> {
                 let a = self.type_stack.pop().unwrap();
                 match (a, b) {
                     (Type::Int, Type::Int) => {
-                        self.ast.push(Node::Operator{op:Op::LqInt, arity:2, func:|args| match (args.get(0), args.get(1)) {
-                            (Some(Value::Int(a)), Some(Value::Int(b))) => Some(vec![Value::Bool(a <= b)]),
-                            _ => None,
-                        }
-                    });
+                        self.ast.push(Node::Operator {
+                            op: Op::LqInt,
+                            arity: 2,
+                            func: |args| match (args.get(0), args.get(1)) {
+                                (Some(Value::Int(a)), Some(Value::Int(b))) => {
+                                    Some(vec![Value::Bool(a <= b)])
+                                }
+                                _ => None,
+                            },
+                        });
                         self.type_stack.push(Type::Bool)
                     }
-                    (_,_) => return Err(anyhow!("{} operator does not support {:?} and {:?}", word, a, b))
+                    (_, _) => {
+                        return Err(anyhow!(
+                            "{} operator does not support {:?} and {:?}",
+                            word,
+                            a,
+                            b
+                        ))
+                    }
                 }
                 Ok(true)
             }
@@ -341,13 +460,26 @@ impl Parser<'_> {
                 let a = self.type_stack.pop().unwrap();
                 match (a, b) {
                     (Type::Int, Type::Int) => {
-                        self.ast.push(Node::Operator{op:Op::GqInt, arity:2, func:|args| match (args.get(0), args.get(1)) {
-                            (Some(Value::Int(a)), Some(Value::Int(b))) => Some(vec![Value::Bool(a >= b)]),
-                            _ => None,
-                        }});
+                        self.ast.push(Node::Operator {
+                            op: Op::GqInt,
+                            arity: 2,
+                            func: |args| match (args.get(0), args.get(1)) {
+                                (Some(Value::Int(a)), Some(Value::Int(b))) => {
+                                    Some(vec![Value::Bool(a >= b)])
+                                }
+                                _ => None,
+                            },
+                        });
                         self.type_stack.push(Type::Bool)
                     }
-                    (_,_) => return Err(anyhow!("{} operator does not support {:?} and {:?}", word, a, b))
+                    (_, _) => {
+                        return Err(anyhow!(
+                            "{} operator does not support {:?} and {:?}",
+                            word,
+                            a,
+                            b
+                        ))
+                    }
                 }
                 Ok(true)
             }
@@ -355,7 +487,11 @@ impl Parser<'_> {
                 let Some(b) = self.type_stack.pop() else {
                     return Err(anyhow!("{} needs ateast 1 argument", word));
                 };
-                self.ast.push(Node::Operator { op: Op::Dup, arity: 1, func: |args| Some(vec![args[0].clone(), args[0].clone()]) });
+                self.ast.push(Node::Operator {
+                    op: Op::Dup,
+                    arity: 1,
+                    func: |args| Some(vec![args[0].clone(), args[0].clone()]),
+                });
                 self.type_stack.push(b);
                 self.type_stack.push(b);
                 Ok(true)
@@ -364,17 +500,25 @@ impl Parser<'_> {
                 let Some(b) = self.type_stack.pop() else {
                     return Err(anyhow!("{} needs ateast 1 argument", word));
                 };
-                self.ast.push(Node::Operator { op: Op::Drop, arity: 1, func: |_args| None });
+                self.ast.push(Node::Operator {
+                    op: Op::Drop,
+                    arity: 1,
+                    func: |_args| None,
+                });
                 self.type_stack.push(b);
                 self.type_stack.push(b);
                 Ok(true)
             }
             "skrivnl" => {
                 let _ = self.type_stack.pop().unwrap();
-                self.ast.push(Node::Operator { op: Op::Println, arity: 1, func: |args| {
-                    println!("{}", args[0]);
-                    None
-                } });
+                self.ast.push(Node::Operator {
+                    op: Op::Println,
+                    arity: 1,
+                    func: |args| {
+                        println!("{}", args[0]);
+                        None
+                    },
+                });
                 Ok(true)
             }
             _ => Ok(false),

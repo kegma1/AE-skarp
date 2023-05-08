@@ -2,9 +2,12 @@ use crate::utils::*;
 use anyhow::{anyhow, Result};
 
 pub fn eval(ast: Vec<Node>) -> Result<u8> {
-    let mut rt = Runtime{ stack:vec![], op_counter: 0 };
+    let mut rt = Runtime {
+        stack: vec![],
+        op_counter: 0,
+    };
 
-    while let Some(node) =  ast.get(rt.op_counter) {
+    while let Some(node) = ast.get(rt.op_counter) {
         // println!("Stack: {:?}\nNode: {:?}", rt.stack, node);
 
         match node {
@@ -17,12 +20,11 @@ pub fn eval(ast: Vec<Node>) -> Result<u8> {
                 }
                 args.reverse();
                 let opt_res = func(&args);
-                match  opt_res {
+                match opt_res {
                     Some(mut res) => rt.stack.append(&mut res),
                     None => (),
                 }
-                
-            },
+            }
             Node::Identifier(_) => todo!(),
             Node::Jump(x) => rt.op_counter = x.resolve(rt.op_counter),
             Node::JumpIfFalse(x) => {
@@ -33,7 +35,7 @@ pub fn eval(ast: Vec<Node>) -> Result<u8> {
                 if !condition_resualt {
                     rt.op_counter = x.resolve(rt.op_counter)
                 }
-            },
+            }
             Node::EndOfIf => (),
         }
         rt.op_counter += 1;
