@@ -88,7 +88,13 @@ impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Value::Int(n) => write!(f, "{}", n),
-            Value::Bool(b) => write!(f, "{}", b),
+            Value::Bool(b) => {
+                if *b {
+                    write!(f, "sann")
+                } else {
+                    write!(f, "usann")
+                }
+            },
         }
     }
 }
