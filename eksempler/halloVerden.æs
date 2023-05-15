@@ -1,8 +1,12 @@
-0 når dup 10 <= {
-    hvis dup 2 % 0 == {
-        1 skrivnl
+1 når dup 100 <= {
+    hvis dup 3 % 0 == over 5 % 0 == og {
+        "fizzbuzz" skrivnl
+    } ellvis dup 3 % 0 == {
+        "fizz" skrivnl
+    } ellvis dup 5 % 0 == {
+        "buzz" skrivnl
     } ellers {
-        0 skrivnl
+        dup skrivnl
     }
-    1 +
+    1 + 
 }

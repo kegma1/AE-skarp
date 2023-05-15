@@ -22,6 +22,7 @@ impl Parser<'_> {
                 Some(c) if c.is_whitespace() => {
                     parser.code.next();
                 }
+                Some('"') => parser.parse_string()?,
                 Some(_) => parser.parse_word(None)?,
                 None => break,
             }
@@ -46,6 +47,22 @@ impl Parser<'_> {
         }
         self.ast.push(Node::PushInt(num_string.parse()?));
         self.type_stack.push(Type::Int);
+        Ok(())
+    }
+
+    fn parse_string(&mut self) -> Result<()> {
+        self.code.next();
+        let mut string = "".to_string();
+        loop {
+            match self.code.peek() {
+                Some('"') => break,
+                Some(_) => string.push(self.code.next().unwrap()),
+                None => return Err(anyhow!("String not closed"))
+            }
+        }
+        self.code.next();
+        self.ast.push(Node::PushStr(string));
+        self.type_stack.push(Type::Str);
         Ok(())
     }
 
@@ -100,10 +117,10 @@ impl Parser<'_> {
 
                 self.ast.append(&mut condition);
                 self.ast
-                    .push(Node::JumpIfFalse(Pointer::new(block.len() as isize + 1)));
+                    .push(Node::JumpIfFalse(JumpPointer::new(block.len() as isize + 1)));
 
                 self.ast.append(&mut block);
-                self.ast.push(Node::Jump(Pointer::new(condition_start)));
+                self.ast.push(Node::Jump(JumpPointer::new(condition_start)));
 
                 Ok(true)
             }
@@ -113,12 +130,31 @@ impl Parser<'_> {
 
                 self.ast.append(&mut condition);
                 self.ast
-                    .push(Node::JumpIfFalse(Pointer::new(block.len() as isize + 1)));
+                    .push(Node::JumpIfFalse(JumpPointer::new(block.len() as isize + 1)));
 
                 self.ast.append(&mut block);
                 self.ast.push(Node::EndOfIf);
 
                 Ok(true)
+            }
+            "ellvis" => {
+                if let Some(Node::EndOfIf) = self.ast.last() {
+                    self.ast.pop();
+                    let mut condition = self.parse_condition()?;
+                    let mut block = self.parse_block()?;
+                    self.ast.push(Node::Jump(JumpPointer::new((condition.len() + block.len()) as isize + 1)));
+    
+                    self.ast.append(&mut condition);
+                    self.ast
+                        .push(Node::JumpIfFalse(JumpPointer::new(block.len() as isize + 1)));
+    
+                    self.ast.append(&mut block);
+                    self.ast.push(Node::EndOfIf);
+    
+                    Ok(true)
+                } else {
+                    Err(anyhow!("Elif block can only end if block"))
+                }
             }
             "ellers" => {
                 while self.code.peek().unwrap().is_whitespace() {
@@ -128,7 +164,7 @@ impl Parser<'_> {
                     let mut block = self.parse_block()?;
                     self.ast.pop();
                     self.ast
-                        .push(Node::Jump(Pointer::new(block.len() as isize)));
+                        .push(Node::Jump(JumpPointer::new(block.len() as isize)));
                     self.ast.append(&mut block);
 
                     Ok(true)
@@ -483,6 +519,34 @@ impl Parser<'_> {
                 }
                 Ok(true)
             }
+            "og" => {
+                let b = self.type_stack.pop().unwrap();
+                let a = self.type_stack.pop().unwrap();
+                match (a, b) {
+                    (Type::Bool, Type::Bool) => {
+                        self.ast.push(Node::Operator {
+                            op: Op::AndBool,
+                            arity: 2,
+                            func: |args| match (args.get(0), args.get(1)) {
+                                (Some(Value::Bool(a)), Some(Value::Bool(b))) => {
+                                    Some(vec![Value::Bool(*a && *b)])
+                                }
+                                _ => None,
+                            },
+                        });
+                        self.type_stack.push(Type::Bool)
+                    }
+                    (_, _) => {
+                        return Err(anyhow!(
+                            "{} operator does not support {:?} and {:?}",
+                            word,
+                            a,
+                            b
+                        ))
+                    }
+                }
+                Ok(true)
+            }
             "dup" => {
                 let Some(b) = self.type_stack.pop() else {
                     return Err(anyhow!("{} needs ateast 1 argument", word));
@@ -507,6 +571,49 @@ impl Parser<'_> {
                 });
                 self.type_stack.push(b);
                 self.type_stack.push(b);
+                Ok(true)
+            }
+            "snu" => {
+                let b = self.type_stack.pop().unwrap();
+                let a = self.type_stack.pop().unwrap();
+                match (a, b) {
+                    (_, _) => {
+                        self.ast.push(Node::Operator {
+                            op: Op::Swap,
+                            arity: 2,
+                            func: |args| match (args.get(0), args.get(1)) {
+                                (Some(a), Some(b)) => {
+                                    Some(vec![b.clone(), a.clone()])
+                                }
+                                _ => None,
+                            },
+                        });
+                        self.type_stack.push(b);
+                        self.type_stack.push(a);
+                    }
+                }
+                Ok(true)
+            }
+            "over" => {
+                let b = self.type_stack.pop().unwrap();
+                let a = self.type_stack.pop().unwrap();
+                match (a, b) {
+                    (_, _) => {
+                        self.ast.push(Node::Operator {
+                            op: Op::Over,
+                            arity: 2,
+                            func: |args| match (args.get(0), args.get(1)) {
+                                (Some(a), Some(b)) => {
+                                    Some(vec![a.clone(), b.clone(), a.clone()])
+                                }
+                                _ => None,
+                            },
+                        });
+                        self.type_stack.push(a);
+                        self.type_stack.push(b);
+                        self.type_stack.push(a);
+                    }
+                }
                 Ok(true)
             }
             "skrivnl" => {

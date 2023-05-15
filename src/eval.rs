@@ -4,6 +4,7 @@ use anyhow::{anyhow, Result};
 pub fn eval(ast: Vec<Node>) -> Result<u8> {
     let mut rt = Runtime {
         stack: vec![],
+        mem: vec![Value::Null; 36000],
         op_counter: 0,
     };
 
@@ -13,6 +14,7 @@ pub fn eval(ast: Vec<Node>) -> Result<u8> {
         match node {
             Node::PushInt(x) => rt.stack.push(Value::Int(*x)),
             Node::PushBool(x) => rt.stack.push(Value::Bool(*x)),
+            Node::PushStr(x) => rt.stack.push(Value::Str(x.clone())),
             Node::Operator { op: _, arity, func } => {
                 let mut args = vec![];
                 for _ in 1..=*arity {

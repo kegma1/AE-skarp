@@ -13,20 +13,23 @@ pub enum Op {
     GtInt,
     LqInt,
     GqInt,
+    AndBool,
 
     Dup,
     Drop,
+    Swap,
+    Over,
 
     Println,
 }
 
-pub struct Pointer {
+pub struct JumpPointer {
     offset: isize,
 }
 
-impl Pointer {
-    pub fn new(offset: isize) -> Pointer {
-        Pointer { offset }
+impl JumpPointer {
+    pub fn new(offset: isize) -> JumpPointer {
+        JumpPointer { offset }
     }
 
     pub fn resolve(&self, current_pos: usize) -> usize {
@@ -38,7 +41,7 @@ impl Pointer {
     }
 }
 
-impl fmt::Display for Pointer {
+impl fmt::Display for JumpPointer {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.offset)?;
         Ok(())
@@ -48,14 +51,15 @@ impl fmt::Display for Pointer {
 pub enum Node {
     PushInt(i64),
     PushBool(bool),
+    PushStr(String),
     Operator {
         op: Op,
         arity: usize,
         func: fn(&[Value]) -> Option<Vec<Value>>,
     },
     Identifier(String),
-    Jump(Pointer),
-    JumpIfFalse(Pointer),
+    Jump(JumpPointer),
+    JumpIfFalse(JumpPointer),
     EndOfIf,
 }
 
@@ -64,6 +68,7 @@ impl fmt::Debug for Node {
         match self {
             Node::PushInt(x) => write!(f, "{}", x),
             Node::PushBool(x) => write!(f, "{}", x),
+            Node::PushStr(x) => write!(f, "\"{}\"", x),
             Node::Operator {
                 op,
                 arity: _,
@@ -78,14 +83,16 @@ impl fmt::Debug for Node {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub enum Value {
+    Null,
     Int(i64),
     Bool(bool),
+    Str(String),
 }
 
 impl fmt::Display for Value {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Value::Int(n) => write!(f, "{}", n),
             Value::Bool(b) => {
@@ -95,6 +102,8 @@ impl fmt::Display for Value {
                     write!(f, "usann")
                 }
             },
+            Value::Str(s) => write!(f, "{}", s),
+            Value::Null => write!(f, "null"),
         }
     }
 }
@@ -103,9 +112,11 @@ impl fmt::Display for Value {
 pub enum Type {
     Int,
     Bool,
+    Str
 }
 
 pub struct Runtime {
     pub stack: Vec<Value>,
+    pub mem: Vec<Value>,
     pub op_counter: usize,
 }
