@@ -8,6 +8,8 @@ pub enum Op {
     DivInt,
     ModInt,
 
+    ConcatStr,
+
     EqInt,
     LtInt,
     GtInt,

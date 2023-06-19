@@ -1,12 +1,1 @@
-1 når dup 100 <= {
-    hvis dup 3 % 0 == over 5 % 0 == og {
-        "fizzbuzz" skrivnl
-    } ellvis dup 3 % 0 == {
-        "fizz" skrivnl
-    } ellvis dup 5 % 0 == {
-        "buzz" skrivnl
-    } ellers {
-        dup skrivnl
-    }
-    1 + 
-}
+"Hallo verden" skrivnl

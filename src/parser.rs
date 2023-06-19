@@ -256,6 +256,19 @@ impl Parser<'_> {
                         });
                         self.type_stack.push(Type::Int)
                     }
+                    (Type::Str, Type::Str) => {
+                        self.ast.push(Node::Operator {
+                            op: Op::ConcatStr,
+                            arity: 2,
+                            func: |args| match (args.get(0), args.get(1)) {
+                                (Some(Value::Str(a)), Some(Value::Str(b))) => {
+                                    Some(vec![Value::Str(a.to_owned() + b)])
+                                }
+                                _ => None,
+                            },
+                        });
+                        self.type_stack.push(Type::Str)
+                    }
                     (_, _) => {
                         return Err(anyhow!(
                             "{} operator does not support {:?} and {:?}",
