@@ -1,5 +1,5 @@
 use crate::utils::*;
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Result, Ok};
 use std::{iter::Peekable, str::Chars};
 
 pub struct Parser<'a> {
@@ -157,9 +157,7 @@ impl Parser<'_> {
                 }
             }
             "ellers" => {
-                while self.code.peek().unwrap().is_whitespace() {
-                    self.code.next();
-                }
+                self.remove_whitespace();
                 if let Some(Node::EndOfIf) = self.ast.last() {
                     let mut block = self.parse_block()?;
                     self.ast.pop();
@@ -172,7 +170,64 @@ impl Parser<'_> {
                     Err(anyhow!("Else block can only end if block"))
                 }
             }
+            "var" => {
+                let name = if let Node::Identifier(name) = self.get_name()? {
+                    Some(name)
+                } else {
+                    None
+                };
+
+                self.remove_whitespace();
+                
+                if self.code.peek().unwrap() != &'=' {
+                    return Err(anyhow!("Expected '=' after constant name, but found '{}'", self.code.peek().unwrap()))
+                } else {
+                    self.code.next();
+                }
+
+                self.remove_whitespace();
+
+                let mut value = if self.code.peek() == Some(&'{') {
+                    self.parse_block()?
+                } else {
+                    let mut exper = "".to_string();
+
+                    while self.code.peek() != Some(&'\n'){
+                        exper.push(self.code.next().unwrap())
+                    }
+                    let exper_parser = Parser::parse(exper.chars().peekable(), Some(self.type_stack.clone()))?;
+                    exper_parser.ast
+                };
+
+                self.ast.push(Node::DefineConst(name.clone().expect("Identifier not found")));
+                self.ast.append(&mut value);
+                self.ast.push(Node::Return(name.clone().expect("Identifier not found")));
+                Ok(true)
+
+            }
             _ => Ok(false),
+        }
+    }
+
+    fn remove_whitespace(&mut self) {
+        while self.code.peek().unwrap().is_whitespace() {
+            self.code.next();
+        }
+    }
+
+    fn get_name(&mut self) -> Result<Node> {
+        self.remove_whitespace();
+        let mut name = "".to_string();
+        while !self.code.peek().unwrap().is_whitespace() {
+            name.push(self.code.next().unwrap())
+        }
+
+        let _ = self.parse_word(Some(name));
+
+        if let Some(Node::Identifier(_))= self.ast.last() {
+            Ok(self.ast.pop().unwrap())
+        } else {
+            Err(anyhow!("Expected identifier but found '{:?}'", self.ast.pop().unwrap()))
         }
     }
 

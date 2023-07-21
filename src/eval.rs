@@ -1,10 +1,12 @@
+use std::collections::HashMap;
+
 use crate::utils::*;
 use anyhow::{anyhow, Result};
 
 pub fn eval(ast: Vec<Node>) -> Result<u8> {
     let mut rt = Runtime {
         stack: vec![],
-        mem: vec![Value::Null; 36000],
+        mem: HashMap::new(),
         op_counter: 0,
     };
 
@@ -27,7 +29,14 @@ pub fn eval(ast: Vec<Node>) -> Result<u8> {
                     None => (),
                 }
             }
-            Node::Identifier(_) => todo!(),
+            Node::Identifier(name) => {
+                let optional_value = rt.mem.get(name);
+                if let Some(value) = optional_value {
+                    rt.stack.push(value.clone());
+                } else {
+                    return Err(anyhow!("could not find identifier '{}'", name));
+                }
+            },
             Node::Jump(x) => rt.op_counter = x.resolve(rt.op_counter),
             Node::JumpIfFalse(x) => {
                 let Some(Value::Bool(condition_resualt)) = rt.stack.pop() else {
@@ -39,6 +48,13 @@ pub fn eval(ast: Vec<Node>) -> Result<u8> {
                 }
             }
             Node::EndOfIf => (),
+            Node::DefineConst(name) => {
+                rt.mem.insert(name.to_string(), Value::Null);
+            },
+            Node::Return(name) => {
+                let value = rt.stack.pop().unwrap();
+                rt.mem.insert(name.to_string(), value);
+            },
         }
         rt.op_counter += 1;
     }

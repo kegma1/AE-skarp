@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{fmt, collections::HashMap};
 
 #[derive(Debug)]
 pub enum Op {
@@ -63,6 +63,8 @@ pub enum Node {
     Jump(JumpPointer),
     JumpIfFalse(JumpPointer),
     EndOfIf,
+    DefineConst(String),
+    Return(String),
 }
 
 impl fmt::Debug for Node {
@@ -80,6 +82,8 @@ impl fmt::Debug for Node {
             Node::Jump(x) => write!(f, "Jmp({})", x),
             Node::JumpIfFalse(x) => write!(f, "Jnt({})", x),
             Node::EndOfIf => write!(f, "EndOfIf"),
+            Node::DefineConst(x) => write!(f, "DefConst({})", x),
+            Node::Return(_) =>write!(f, "Ret"),
         }?;
         Ok(())
     }
@@ -119,6 +123,6 @@ pub enum Type {
 
 pub struct Runtime {
     pub stack: Vec<Value>,
-    pub mem: Vec<Value>,
+    pub mem: HashMap<String, Value>,
     pub op_counter: usize,
 }

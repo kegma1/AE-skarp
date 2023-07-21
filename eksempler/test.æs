@@ -1,1 +1,8 @@
-"hallo" " " "verden" + + skrivnl
+1
+var hallo = {
+    10 
+    5 
+    +
+}
+
+hallo skrivnl
